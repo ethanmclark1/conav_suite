@@ -6,11 +6,12 @@ from sig8.utils.core import Agent, Landmark, World
 from sig8.utils.simple_env import SimpleEnv, make_env
 from gymnasium.utils import EzPickle
 
-
 class raw_env(SimpleEnv, EzPickle):
-    def __init__(self, problem_type='vertical', obs_size=0.1, max_cycles=500, continuous_actions=False, render_mode="human"):
+    def __init__(self, 
+                 problem_type='vertical', agent_radius=0.1, obs_radius=0.1,
+                 max_cycles=500, continuous_actions=False, render_mode="human"):
         scenario = Scenario()
-        world = scenario.make_world(problem_type, obs_size)
+        world = scenario.make_world(problem_type, agent_radius, obs_radius)
         super().__init__(
             scenario=scenario, 
             world=world, 
@@ -19,14 +20,14 @@ class raw_env(SimpleEnv, EzPickle):
             continuous_actions=continuous_actions,
         )
         self.metadata["name"] = "sig8"
+        self.metadata["agent_radius"] = agent_radius
+        self.metadata["obs_radius"] = obs_radius
         self.metadata["num_obstacles"] = len(self.world.landmarks) - 1
-        self.metadata["agent_radius"] = self.world.landmarks[0].size
-        self.metadata["obstacle_radius"] = obs_size
 
 env = make_env(raw_env)
 
 class Scenario(BaseScenario):
-    def make_world(self, problem_type, obs_size):
+    def make_world(self, problem_type, agent_radius, obs_radius):
         world = World()
         self.get_problem_configuration(world, problem_type)
         
@@ -36,18 +37,18 @@ class Scenario(BaseScenario):
             agent.name = f"agent_{i}"
             agent.collide = False
             agent.silent = True
-            agent.size = 0.1
+            agent.size = agent_radius
         # add landmarks (4 obstacles + 1 goal)
         world.landmarks = [Landmark() for i in range(4 + 1)]
         world.landmarks[0].name = "goal"
         world.landmarks[0].collide = False
         world.landmarks[0].movable = False
-        world.landmarks[0].size = 0.1
+        world.landmarks[0].size = agent_radius
         for i, landmark in enumerate(world.landmarks[1:]):
             landmark.name = "landmark %d" % i
             landmark.collide = False
             landmark.movable = False
-            landmark.size = obs_size
+            landmark.size = obs_radius
         return world
 
     def reset_world(self, world, np_random):
