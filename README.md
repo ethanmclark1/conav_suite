@@ -2,7 +2,7 @@
 
 Sig8 is an adapted version of the Simple environment, originally developed by the Farama Foundation as part of their [Multi-Agent Particle Environment (MPE)](https://pettingzoo.farama.org/environments/mpe/).
 
-## Sig8
+# Sig8
 
 This repository contains a simple multi-agent environment with continuous observations and a discrete action space, inspired by the Lewis Signaling game. The environment incorporates basic simulated physics to create a scenario where multiple agents must communicate and collaborate effectively to achieve their goals.
 
