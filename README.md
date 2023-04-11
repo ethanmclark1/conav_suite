@@ -12,6 +12,7 @@ This repository contains a simple multi-agent environment with continuous observ
 git clone https://github.com/ethanmclark1/sig8.git
 cd sig8
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Usage
