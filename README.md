@@ -18,24 +18,24 @@ pip install -e .
 ## Usage
 
 ```
-from sig8 import sig8
+import sig8
 
-env = sig8.env(problem_type='vertical')
-env.reset()
+env = sig8.env()
+env.reset(options={'problem_type': 'vertical'})
 ```
 
 ## List of Problem Scenarios
 
-| Names        | Description                                                                                                                                                   |
-| :--------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|   `cluster`   | Four obstacles positioned in a square in the center of the environment, start is on the left side, and goal is on the right side                              |
-|   `L-Shaped`   | Four obstacles positioned in a L in the center of the environment, start is on the left boundary and goal is on the inner elbow of the L                      |
-|   `Vertical`   | Four obstacles positioned in a vertical line in the middle of the enviornment, start is on the left boundary, goal, is on the right boundary                  |
-|  `Horizontal`  | Four obstacles positioned in a horizontal line in the middle of the enviornment, start is on the left boundary, goal, is on the right boundary                |
-|     `Top`     | Four obstacles positioned in the top of the enviornment, start is in the bottom half on the left boundary, goal is in the bottom half on the right boundary |
-|    `Bottom`    | Four obstacles positioned in the bottom of the enviornment, start is in the top half on the left boundary, goal is in the top half on the right boundary     |
-|    `Right`    | Four obstacles positioned in the right of the enviornment, start is in the left half on the bottom boundary, goal is in left half on the top boundary      |
-|     `Left`     | Four obstacles positioned in the left of the enviornment, start is in the right half on the bottom boundary, goal is in right half on the top boundary     |
+|     Names     | Description                                                                                                                                                   |
+| :------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|  `cluster`  | Four obstacles positioned in a square in the center of the environment, start is on the left side, and goal is on the right side                              |
+|  `L-Shaped`  | Four obstacles positioned in a L in the center of the environment, start is on the left boundary and goal is on the inner elbow of the L                      |
+|  `Vertical`  | Four obstacles positioned in a vertical line in the middle of the enviornment, start is on the left boundary, goal, is on the right boundary                  |
+| `Horizontal` | Four obstacles positioned in a horizontal line in the middle of the enviornment, start is on the left boundary, goal, is on the right boundary                |
+|    `Top`    | Four obstacles positioned in the top of the enviornment, start is in the bottom half on the left boundary, goal is in the bottom half on the right boundary |
+|   `Bottom`   | Four obstacles positioned in the bottom of the enviornment, start is in the top half on the left boundary, goal is in the top half on the right boundary     |
+|   `Right`   | Four obstacles positioned in the right of the enviornment, start is in the left half on the bottom boundary, goal is in left half on the top boundary      |
+|    `Left`    | Four obstacles positioned in the left of the enviornment, start is in the right half on the bottom boundary, goal is in right half on the top boundary     |
 
 ## Paper Citation
 
