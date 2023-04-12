@@ -26,16 +26,16 @@ env.reset(options={'problem_type': 'vertical'})
 
 ## List of Problem Scenarios
 
-|     Names     | Description                                                                                                                                                   |
-| :------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|  `cluster`  | Four obstacles positioned in a square in the center of the environment, start is on the left side, and goal is on the right side                              |
-|  `L-Shaped`  | Four obstacles positioned in a L in the center of the environment, start is on the left boundary and goal is on the inner elbow of the L                      |
-|  `Vertical`  | Four obstacles positioned in a vertical line in the middle of the enviornment, start is on the left boundary, goal, is on the right boundary                  |
-| `Horizontal` | Four obstacles positioned in a horizontal line in the middle of the enviornment, start is on the left boundary, goal, is on the right boundary                |
-|    `Top`    | Four obstacles positioned in the top of the enviornment, start is in the bottom half on the left boundary, goal is in the bottom half on the right boundary |
-|   `Bottom`   | Four obstacles positioned in the bottom of the enviornment, start is in the top half on the left boundary, goal is in the top half on the right boundary     |
-|   `Right`   | Four obstacles positioned in the right of the enviornment, start is in the left half on the bottom boundary, goal is in left half on the top boundary      |
-|    `Left`    | Four obstacles positioned in the left of the enviornment, start is in the right half on the bottom boundary, goal is in right half on the top boundary     |
+| Names          | Description                                                                                                                                                                                          |
+| :-----------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|     `Cluster`     | The environment features a central square formed by four obstacles, with the start on the left and the goal on the right side.                                                                       |
+|    `L-Shaped`    | The environment showcases a central L-shaped configuration of four obstacles, with the starting point on the left boundary and the goal situated at the inner elbow of the L.                        |
+|    `Vertical`    | Four obstacles are aligned vertically in the environment's center, with the starting point on the left boundary and the goal on the right boundary.                                                  |
+|   `Horizontal`   | Four obstacles are arranged in a horizontal line at the environment's midsection, with the start on the left boundary and the goal on the right boundary.                                            |
+|       `Top`       | Four obstacles are placed at the top of the environment, while the start is situated in the bottom half on the left boundary and the goal is in the bottom half on the right boundary.               |
+|     `Bottom`     | Four obstacles are placed at the bottom of the environment, while the start is situated in the top half on the left boundary and the goal is in the top half on the right boundary.                 |
+|      `Right`      | Four obstacles are situated on the right side of the environment, with the start positioned in the left half along the bottom boundary and the goal located in the left half along the top boundary. |
+|      `Left`      | Four obstacles are situated on the left side of the environment, with the start positioned in the right half along the bottom boundary and the goal located in the left half along the top boundary. |
 
 ## Paper Citation
 
