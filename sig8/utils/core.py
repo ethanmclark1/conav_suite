@@ -82,7 +82,7 @@ class Agent(Entity):  # properties of agent entities
 
 
 class World:  # multi-agent world
-    def __init__(self):
+    def __init__(self, has_dynamic_adversaries=False):
         # list of agents and entities (can change at execution-time!)
         self.agents = []
         self.landmarks = []
@@ -100,11 +100,13 @@ class World:  # multi-agent world
         self.contact_force = 1e2
         self.contact_margin = 1e-3
         # problem configurations
-        self.possible_problem_types = None
-        self.problem_type = None
+        self.has_dynamic_adversaries = has_dynamic_adversaries
+        self.problem_scenarios = None
+        self.scenario = None
         self.start_constr = None
         self.goal_constr = None
-        self.obs_constr = None
+        self.static_adversarial_constr = None
+        self.dynamic_adversarial_constr = None
         
     # return all entities in the world
     @property

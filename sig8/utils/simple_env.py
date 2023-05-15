@@ -66,7 +66,7 @@ class SimpleEnv(AECEnv):
         self.continuous_actions = continuous_actions
         self.local_ratio = local_ratio
 
-        self.scenario.reset_world(self.world, 'v_cluster', self.np_random)
+        self.scenario.reset_world(self.world, self.np_random)
         self.agents = [agent.name for agent in self.world.agents]
         self.possible_agents = self.agents[:]
         self._index_map = {
