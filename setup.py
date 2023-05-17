@@ -1,10 +1,17 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
-setup(name='sig8',
-      version='0.1',
-      description='sig8 multi-agent gym environment',
-      author='Ethan Clark',
-      author_email='eclark715@gmail.com',
-      license='MIT',
-      packages=['sig8'],
-      zip_safe=False)
+setup(
+    name="Signal8",
+    version="0.1",
+    packages=find_packages(),
+    author="Ethan Clark",
+    author_email="eclark715@gmail.com.com",
+    description="A multi-agent environment inspired by the Lewis Signaling Game, featuring eight unique problem configurations with both static and dynamic adversaries.",
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
+    url="https://github.com/ethanmclark1/signal8",
+    classifiers=[
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+    ],
+)
