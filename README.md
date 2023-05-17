@@ -4,13 +4,13 @@ Sig8 is an adapted version of the Simple environment, originally developed by th
 
 # Signal8
 
-This repository contains a simple multi-agent environment with continuous observations and a discrete action space, inspired by the Lewis Signaling game. The environment incorporates basic simulated physics to create a scenario where multiple agents must communicate and collaborate effectively to achieve their goals.
+This repository contains a simple multi-agent environment with continuous observations and a discrete action space, inspired by the Lewis Signaling game. The environment incorporates basic simulated physics to create a scenario where agents must communicate and collaborate effectively to navigate around both static and dynamic adversaries to reach a goal.
 
 ## Installation
 
 ```
-git clone https://github.com/ethanmclark1/sig8.git
-cd sig8
+git clone https://github.com/ethanmclark1/signal8.git
+cd signal8
 pip install -r requirements.txt
 pip install -e .
 ```
@@ -18,10 +18,10 @@ pip install -e .
 ## Usage
 
 ```
-import sig8
+import signal8
 
-env = sig8.env()
-env.reset(options={'problem_type': 'vertical'})
+env = signal8.env(has_dynamic_adversaries=True)
+env.reset(options={"problem_name": "v_cluster"}))
 ```
 
 ## List of Problem Scenarios
