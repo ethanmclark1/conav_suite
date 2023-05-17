@@ -99,10 +99,10 @@ class World:  # multi-agent world
         # contact response parameters
         self.contact_force = 1e2
         self.contact_margin = 1e-3
-        # problem configurations
+        # problem scenarios
         self.has_dynamic_adversaries = has_dynamic_adversaries
         self.problem_scenarios = None
-        self.scenario = None
+        self.problem_name = None
         self.start_constr = None
         self.goal_constr = None
         self.static_adversarial_constr = None

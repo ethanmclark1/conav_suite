@@ -154,7 +154,7 @@ class SimpleEnv(AECEnv):
         if seed is not None:
             self.seed(seed=seed)
         problem_scenario = options['problem_name'] if options is not None else 'v_cluster'
-        self.scenario.reset_world(self.world, problem_scenario, self.np_random)
+        self.scenario.reset_world(self.world, self.np_random, problem_scenario)
 
         self.agents = self.possible_agents[:]
         self.rewards = {name: 0.0 for name in self.agents}
@@ -166,11 +166,11 @@ class SimpleEnv(AECEnv):
         self.agent_selection = self._agent_selector.reset()
         self.steps = 0
 
-        self.current_actions = [None] * self.num_agents
+        self.current_actions = [None] * len(self.world.policy_agents)
 
     def _execute_world_step(self):
         # set action for each agent
-        for i, agent in enumerate(self.world.agents):
+        for i, agent in enumerate(self.world.policy_agents):
             action = self.current_actions[i]
             scenario_action = []
             if agent.movable:
@@ -249,28 +249,19 @@ class SimpleEnv(AECEnv):
         ):
             self._was_dead_step(action)
             return
-        cur_agent = self.agent_selection
+        
         current_idx = self._index_map[self.agent_selection]
-        next_idx = (current_idx + 1) % self.num_agents
-        self.agent_selection = self._agent_selector.next()
-
         self.current_actions[current_idx] = action
-        min_dist = self.world.agents[0].size + self.world.agents[0].goal.size
 
-        if next_idx == 0:
-            self._execute_world_step()
-            goal_dist = np.linalg.norm(self.world.agents[0].state.p_pos-self.world.agents[0].goal.state.p_pos)
-            landmark_dist = [np.linalg.norm(self.world.agents[0].state.p_pos - landmark.state.p_pos) 
-                          for landmark in self.world.landmarks[1:]]
-            self.steps += 1
-            if self.steps >= self.max_cycles or min(landmark_dist) <= min_dist:
-                self.truncations[self.agent_selection] = True
-            if min_dist >= goal_dist:
-                self.terminations[self.agent_selection] = True
-        else:
-            self._clear_rewards()
-        self._cumulative_rewards[cur_agent] = 0
-        self._accumulate_rewards()
+        self._execute_world_step()
+        goal_dist = np.linalg.norm(self.world.agents[0].state.p_pos-self.world.agents[0].goal.state.p_pos)
+        landmark_dist = [np.linalg.norm(self.world.agents[0].state.p_pos - landmark.state.p_pos) for landmark in self.world.landmarks[1:]]
+        self.steps += 1
+        min_dist = self.world.agents[0].size + self.world.agents[0].goal.size
+        if self.steps >= self.max_cycles or min(landmark_dist) <= min_dist:
+            self.truncations[self.agent_selection] = True
+        if min_dist >= goal_dist:
+            self.terminations[self.agent_selection] = True
 
         if self.render_mode == "human":
             self.render()
@@ -343,8 +334,6 @@ class SimpleEnv(AECEnv):
                         ",".join(
                             [f"{comm:.2f}" for comm in entity.state.c]) + "]"
                     )
-                else:
-                    word = alphabet[np.argmax(entity.state.c)]
 
                 message = entity.name + " sends " + word + "   "
                 message_x_pos = self.width * 0.05

@@ -42,7 +42,7 @@ problems = {
 }
 
 def get_problem_list():
-    return problems.keys()
+    return list(problems.keys())
 
 def get_problem(scenario_name, has_dynamic_adversaries):
     scenario = problems[scenario_name]
