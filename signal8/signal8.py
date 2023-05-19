@@ -11,7 +11,6 @@ class raw_env(SimpleEnv, EzPickle):
     def __init__(
         self, 
         agent_radius=0.1,
-        goal_radius=0.1,
         adversary_radius=0.1,
         num_adversaries=4,
         has_dynamic_adversaries=False,
@@ -23,7 +22,6 @@ class raw_env(SimpleEnv, EzPickle):
         scenario = Scenario()
         world = scenario.make_world(
             agent_radius, 
-            goal_radius, 
             num_adversaries, 
             adversary_radius, 
             has_dynamic_adversaries
@@ -38,14 +36,14 @@ class raw_env(SimpleEnv, EzPickle):
         )
         
         self.metadata["agent_radius"] = agent_radius
-        self.metadata["goal_radius"] = goal_radius
         self.metadata["num_adversaries"] = num_adversaries
         self.metadata["adversary_radius"] = adversary_radius
+        self.metadata["has_dynamic_adversaries"] = has_dynamic_adversaries
 
 env = make_env(raw_env)
 
 class Scenario(BaseScenario):
-    def make_world(self, agent_radius, goal_radius, num_adversaries, adversary_radius, has_dynamic_adversaries):
+    def make_world(self, agent_radius, num_adversaries, adversary_radius, has_dynamic_adversaries):
         world = World(has_dynamic_adversaries)
         world.problem_scenarios = get_problem_list()
         
@@ -67,7 +65,7 @@ class Scenario(BaseScenario):
         world.landmarks[0].name = "goal_0"
         world.landmarks[0].collide = False
         world.landmarks[0].movable = False
-        world.landmarks[0].size = goal_radius
+        world.landmarks[0].size = agent_radius
         
         for i, landmark in enumerate(world.landmarks[1:]):
             landmark.name = f"obstacle_{i}"

@@ -1,6 +1,6 @@
 # A Fork of Multi-Agent Particle Environment
 
-Sig8 is an adapted version of the Simple environment, originally developed by the Farama Foundation as part of their [Multi-Agent Particle Environment (MPE)](https://pettingzoo.farama.org/environments/mpe/).
+Signal8 is an adapted version of the Simple environment, originally developed by the Farama Foundation as part of their [Multi-Agent Particle Environment (MPE)](https://pettingzoo.farama.org/environments/mpe/).
 
 # Signal8
 
@@ -18,9 +18,9 @@ pip install -e .
 ## Usage
 
 ```
-import signal8
+import Signal8
 
-env = signal8.env(has_dynamic_adversaries=True)
+env = Signal8.env(has_dynamic_adversaries=True)
 env.reset(options={"problem_name": "v_cluster"}))
 ```
 
