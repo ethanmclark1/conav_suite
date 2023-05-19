@@ -2,10 +2,10 @@ import math
 import numpy as np
 
 from gymnasium.utils import EzPickle
-from utils.scenario import BaseScenario
-from utils.core import Agent, Landmark, World, Action
-from utils.simple_env import SimpleEnv, make_env
-from utils.problems import get_problem, get_problem_list
+from .utils.scenario import BaseScenario
+from .utils.core import Agent, Landmark, World, Action
+from .utils.simple_env import SimpleEnv, make_env
+from .utils.problems import get_problem, get_problem_list
 
 class raw_env(SimpleEnv, EzPickle):
     def __init__(

@@ -1,5 +1,4 @@
 import os
-import pdb
 import copy
 
 import gymnasium
@@ -51,9 +50,7 @@ class SimpleEnv(AECEnv):
         self.height = 700
         self.screen = pygame.Surface([self.width, self.height])
         self.max_size = 1
-        self.game_font = pygame.freetype.Font(
-            os.path.join(os.path.dirname(__file__), "secrcode.ttf"), 24
-        )
+        self.game_font = pygame.freetype.Font(None, 20)
 
         # Set up the drawing window
 
