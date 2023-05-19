@@ -11,8 +11,8 @@ class raw_env(SimpleEnv, EzPickle):
     def __init__(
         self, 
         agent_radius=0.1,
-        obs_radius=0.1,
         num_obstacles=4,
+        obstacle_radius=0.1,
         dynamic_obstacles=False,
         max_cycles=500, 
         continuous_actions=False, 
@@ -23,7 +23,7 @@ class raw_env(SimpleEnv, EzPickle):
         world = scenario.make_world(
             agent_radius, 
             num_obstacles, 
-            obs_radius, 
+            obstacle_radius, 
             dynamic_obstacles
             )
         
@@ -37,13 +37,13 @@ class raw_env(SimpleEnv, EzPickle):
         
         self.metadata["agent_radius"] = agent_radius
         self.metadata["num_obstacles"] = num_obstacles
-        self.metadata["obs_radius"] = obs_radius
+        self.metadata["obstacle_radius"] = obstacle_radius
         self.metadata["dynamic_obstacles"] = dynamic_obstacles
 
 env = make_env(raw_env)
 
 class Scenario(BaseScenario):
-    def make_world(self, agent_radius, num_obstacles, obs_radius, dynamic_obstacles):
+    def make_world(self, agent_radius, num_obstacles, obstacle_radius, dynamic_obstacles):
         world = World(dynamic_obstacles)
         world.problem_scenarios = get_problem_list()
         
@@ -70,7 +70,7 @@ class Scenario(BaseScenario):
         for i, landmark in enumerate(world.landmarks[1:]):
             landmark.name = f"obs_{i}"
             landmark.collide = False
-            landmark.size = obs_radius
+            landmark.size = obstacle_radius
                 
         return world
 
@@ -83,7 +83,7 @@ class Scenario(BaseScenario):
             if agent.adversary:
                 agent.color = np.array([0.5, 0, 0])
                 agent.state.p_vel = np.zeros(world.dim_p)
-                agent.state.p_pos = np_random.uniform(*zip(*world.dynamic_adversarial_constr[(i+1) % len(world.dynamic_adversarial_constr)]))
+                agent.state.p_pos = np_random.uniform(*zip(*world.dynamic_obstacle_constr[(i+1) % len(world.dynamic_obstacle_constr)]))
                 agent.action_callback = self.get_scripted_action
             else:
                 agent.color = np.array([0, 0.8, 0])
@@ -97,7 +97,7 @@ class Scenario(BaseScenario):
         for landmark in world.landmarks[1:]:
             landmark.color = np.array([0.2, 0.2, 0.2])
             landmark.state.p_vel = np.zeros(world.dim_p)
-            landmark.state.p_pos = np_random.uniform(*zip(*world.static_adversarial_constr))
+            landmark.state.p_pos = np_random.uniform(*zip(*world.static_obstacle_constr))
     
     # Do not need to implement this function
     def reward(self, agent, world):
@@ -111,10 +111,10 @@ class Scenario(BaseScenario):
         problem = get_problem(problem_name, world.dynamic_obstacles)
         world.start_constr = problem['start']
         world.goal_constr = problem['goal']
-        world.static_adversarial_constr = problem['static_obs']
+        world.static_obstacle_constr = problem['static_obs']
         
         if world.dynamic_obstacles:
-            world.dynamic_adversarial_constr = problem['dynamic_obs']
+            world.dynamic_obstacle_constr = problem['dynamic_obs']
     
     # Get scripted action for adversarial agents s.t. they move in a straight line along their constraint
     def get_scripted_action(self, agent, world):
@@ -122,7 +122,7 @@ class Scenario(BaseScenario):
         action.u = np.zeros(world.dim_p)
         action.c = np.zeros(world.dim_c)
         
-        constr = world.dynamic_adversarial_constr[int(agent.name[-1])]
+        constr = world.dynamic_obstacle_constr(agent.name[-1])
         constr_size = [(abs(point[0]) + abs(point[1])) for point in constr]
         dimension = 'horizontal' if constr_size[0] > constr_size[1] else 'vertical'
 

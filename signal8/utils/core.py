@@ -105,8 +105,8 @@ class World:  # multi-agent world
         self.problem_name = None
         self.start_constr = None
         self.goal_constr = None
-        self.static_adversarial_constr = None
-        self.dynamic_adversarial_constr = None
+        self.static_obstacle_constr = None
+        self.dynamic_obstacle_constr = None
         
     # return all entities in the world
     @property
