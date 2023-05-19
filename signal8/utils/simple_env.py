@@ -1,6 +1,3 @@
-import os
-import copy
-
 import gymnasium
 import numpy as np
 import pygame
@@ -129,15 +126,6 @@ class SimpleEnv(AECEnv):
             self.world.agents[self._index_map[agent]], self.world
         ).astype(np.float32)
         
-    def get_init_conditions(self):
-        world = self.unwrapped.world
-        start = world.agents[0].state.p_pos
-        goal = world.agents[0].goal.state.p_pos
-        obstacles = copy.copy(world.landmarks)
-        obstacles.remove(world.agents[0].goal)
-        obstacles = np.array([obstacle.state.p_pos for obstacle in obstacles])
-        return start, goal, obstacles
-
     def state(self):
         states = tuple(
             self.scenario.observation(

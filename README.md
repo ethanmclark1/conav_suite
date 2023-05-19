@@ -4,7 +4,7 @@ Signal8 is an adapted version of the Simple environment, originally developed by
 
 # Signal8
 
-This repository contains a simple multi-agent environment with continuous observations and a discrete action space, inspired by the Lewis Signaling game. The environment incorporates basic simulated physics to create a scenario where agents must communicate and collaborate effectively to navigate around both static and dynamic adversaries to reach a goal.
+This repository contains a simple multi-agent environment with continuous observations and a discrete action space, inspired by the Lewis Signaling game. The environment incorporates basic simulated physics to create a scenario where agents must communicate and collaborate effectively to navigate around both static and dynamic obstacles to reach a goal.
 
 ## Installation
 
@@ -20,7 +20,7 @@ pip install -e .
 ```
 import Signal8
 
-env = Signal8.env(has_dynamic_adversaries=True)
+env = Signal8.env(dynamic_obstacles=True)
 env.reset(options={"problem_name": "v_cluster"}))
 ```
 

@@ -11,9 +11,9 @@ class raw_env(SimpleEnv, EzPickle):
     def __init__(
         self, 
         agent_radius=0.1,
-        adversary_radius=0.1,
-        num_adversaries=4,
-        has_dynamic_adversaries=False,
+        obs_radius=0.1,
+        num_obstacles=4,
+        dynamic_obstacles=False,
         max_cycles=500, 
         continuous_actions=False, 
         render_mode="human"
@@ -22,9 +22,9 @@ class raw_env(SimpleEnv, EzPickle):
         scenario = Scenario()
         world = scenario.make_world(
             agent_radius, 
-            num_adversaries, 
-            adversary_radius, 
-            has_dynamic_adversaries
+            num_obstacles, 
+            obs_radius, 
+            dynamic_obstacles
             )
         
         super().__init__(
@@ -36,19 +36,19 @@ class raw_env(SimpleEnv, EzPickle):
         )
         
         self.metadata["agent_radius"] = agent_radius
-        self.metadata["num_adversaries"] = num_adversaries
-        self.metadata["adversary_radius"] = adversary_radius
-        self.metadata["has_dynamic_adversaries"] = has_dynamic_adversaries
+        self.metadata["num_obstacles"] = num_obstacles
+        self.metadata["obs_radius"] = obs_radius
+        self.metadata["dynamic_obstacles"] = dynamic_obstacles
 
 env = make_env(raw_env)
 
 class Scenario(BaseScenario):
-    def make_world(self, agent_radius, num_adversaries, adversary_radius, has_dynamic_adversaries):
-        world = World(has_dynamic_adversaries)
+    def make_world(self, agent_radius, num_obstacles, obs_radius, dynamic_obstacles):
+        world = World(dynamic_obstacles)
         world.problem_scenarios = get_problem_list()
         
-        num_dynamic_adversaries = math.floor(num_adversaries / 2) if has_dynamic_adversaries else 0
-        num_agents = num_dynamic_adversaries + 1
+        num_dynamic_obstacles = math.floor(num_obstacles / 2) if dynamic_obstacles else 0
+        num_agents = num_dynamic_obstacles + 1
 
         world.agents = [Agent() for _ in range(num_agents)]
         for i, agent in enumerate(world.agents):
@@ -61,16 +61,16 @@ class Scenario(BaseScenario):
             agent.blind = agent.adversary
             agent.size = agent_radius
         
-        world.landmarks = [Landmark() for _ in range(num_adversaries - num_dynamic_adversaries + 1)]
+        world.landmarks = [Landmark() for _ in range(num_obstacles - num_dynamic_obstacles + 1)]
         world.landmarks[0].name = "goal_0"
         world.landmarks[0].collide = False
         world.landmarks[0].movable = False
         world.landmarks[0].size = agent_radius
         
         for i, landmark in enumerate(world.landmarks[1:]):
-            landmark.name = f"obstacle_{i}"
+            landmark.name = f"obs_{i}"
             landmark.collide = False
-            landmark.size = adversary_radius
+            landmark.size = obs_radius
                 
         return world
 
@@ -108,13 +108,13 @@ class Scenario(BaseScenario):
     
     # Get constraints on entities given the problem name
     def get_problem_scenario(self, world, problem_name):
-        problem = get_problem(problem_name, world.has_dynamic_adversaries)
+        problem = get_problem(problem_name, world.dynamic_obstacles)
         world.start_constr = problem['start']
         world.goal_constr = problem['goal']
-        world.static_adversarial_constr = problem['static_adversary']
+        world.static_adversarial_constr = problem['static_obs']
         
-        if world.has_dynamic_adversaries:
-            world.dynamic_adversarial_constr = problem['dynamic_adversary']
+        if world.dynamic_obstacles:
+            world.dynamic_adversarial_constr = problem['dynamic_obs']
     
     # Get scripted action for adversarial agents s.t. they move in a straight line along their constraint
     def get_scripted_action(self, agent, world):
