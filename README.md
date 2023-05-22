@@ -27,15 +27,15 @@ env.reset(options={"problem_name": "v_cluster"}))
 ## List of Problem Scenarios
 
 |     Names     | Description                                                                                                                                                                                          |
-| :------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|  `Cluster`  | The environment features a central square formed by four obstacles, with the start on the left and the goal on the right side.                                                                       |
-|  `L-Shaped`  | The environment showcases a central L-shaped configuration of four obstacles, with the starting point on the left boundary and the goal situated at the inner elbow of the L.                        |
-|  `Vertical`  | Four obstacles are aligned vertically in the environment's center, with the starting point on the left boundary and the goal on the right boundary.                                                  |
-| `Horizontal` | Four obstacles are arranged in a horizontal line at the environment's midsection, with the start on the left boundary and the goal on the right boundary.                                            |
-|    `Top`    | Four obstacles are placed at the top of the environment, while the start is situated in the bottom half on the left boundary and the goal is in the bottom half on the right boundary.               |
-|   `Bottom`   | Four obstacles are placed at the bottom of the environment, while the start is situated in the top half on the left boundary and the goal is in the top half on the right boundary.                 |
-|   `Right`   | Four obstacles are situated on the right side of the environment, with the start positioned in the left half along the bottom boundary and the goal located in the left half along the top boundary. |
-|    `Left`    | Four obstacles are situated on the left side of the environment, with the start positioned in the right half along the bottom boundary and the goal located in the left half along the top boundary. |
+| :-----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v_cluster` | The environment features a central square formed by four obstacles, with the start on the left and the goal on the right side.                                                                       |
+| ``h_cluster`` | The environment showcases a central L-shaped configuration of four obstacles, with the starting point on the left boundary and the goal situated at the inner elbow of the L.                        |
+|  `v_wall`  | Four obstacles are aligned vertically in the environment's center, with the starting point on the left boundary and the goal on the right boundary.                                                  |
+|  `h_wall`  | Four obstacles are arranged in a horizontal line at the environment's midsection, with the start on the left boundary and the goal on the right boundary.                                            |
+|    `top`    | Four obstacles are placed at the top of the environment, while the start is situated in the bottom half on the left boundary and the goal is in the bottom half on the right boundary.               |
+|  `bottom`  | Four obstacles are placed at the bottom of the environment, while the start is situated in the top half on the left boundary and the goal is in the top half on the right boundary.                 |
+|   `right`   | Four obstacles are situated on the right side of the environment, with the start positioned in the left half along the bottom boundary and the goal located in the left half along the top boundary. |
+|   `left`   | Four obstacles are situated on the left side of the environment, with the start positioned in the right half along the bottom boundary and the goal located in the left half along the top boundary. |
 
 ## Paper Citation
 
