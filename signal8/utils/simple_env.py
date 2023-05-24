@@ -151,11 +151,11 @@ class SimpleEnv(AECEnv):
         self.agent_selection = self._agent_selector.reset()
         self.steps = 0
 
-        self.current_actions = [None] * len(self.world.policy_agents)
+        self.current_actions = [None] * len(self.world.agents)
 
     def _execute_world_step(self):
         # set action for each agent
-        for i, agent in enumerate(self.world.policy_agents):
+        for i, agent in enumerate(self.world.agents):
             action = self.current_actions[i]
             scenario_action = []
             if agent.movable:

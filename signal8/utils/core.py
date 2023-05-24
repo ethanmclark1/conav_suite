@@ -53,9 +53,28 @@ class Entity:  # properties and state of physical world entity
         return self.initial_mass
 
 
-class Landmark(Entity):  # properties of landmark entities
+class Landmark(Entity):  # properties of goal and static obstacles entities
     def __init__(self):
         super().__init__()
+
+
+class DynamicObstacle(Entity):  # properties of dynamic obstacles entities
+    def __init__(self):
+        super().__init__()
+        # dynamic obstacles are movable by default
+        self.movable = True
+        # cannot send communication signals
+        self.silent = False
+        # cannot observe the world
+        self.blind = False
+        # physical motor noise amount
+        self.u_noise = None
+        # control range
+        self.u_range = 1.0
+        # action
+        self.action = Action()
+        # script behavior to execute
+        self.action_callback = None
 
 
 class Agent(Entity):  # properties of agent entities
@@ -71,21 +90,21 @@ class Agent(Entity):  # properties of agent entities
         self.u_noise = None
         # communication noise amount
         self.c_noise = None
+        # reached goal state
+        self.has_payload = False
         # control range
         self.u_range = 1.0
         # state
         self.state = AgentState()
         # action
         self.action = Action()
-        # script behavior to execute
-        self.action_callback = None
-
 
 class World:  # multi-agent world
     def __init__(self, dynamic_obstacles=False):
         # list of agents and entities (can change at execution-time!)
         self.agents = []
-        self.landmarks = []
+        self.goals = []
+        self.obstacles = []
         # communication channel dimensionality
         self.dim_c = 0
         # position dimensionality
@@ -99,8 +118,9 @@ class World:  # multi-agent world
         # contact response parameters
         self.contact_force = 1e2
         self.contact_margin = 1e-3
-        # problem scenarios
+        # has dynamic obstacles
         self.dynamic_obstacles = dynamic_obstacles
+        # problem scenarios
         self.problem_scenarios = None
         self.problem_name = None
         self.start_constr = None
@@ -111,23 +131,10 @@ class World:  # multi-agent world
     # return all entities in the world
     @property
     def entities(self):
-        return self.agents + self.landmarks
-
-    # return all agents controllable by external policies
-    @property
-    def policy_agents(self):
-        return [agent for agent in self.agents if agent.action_callback is None]
-
-    # return all agents controlled by world scripts
-    @property
-    def scripted_agents(self):
-        return [agent for agent in self.agents if agent.action_callback is not None]
+        return self.agents + self.goals + self.obstacles
 
     # update state of the world
     def step(self):
-        # set actions for scripted agents
-        for agent in self.scripted_agents:
-            agent.action = agent.action_callback(agent, self)
         # gather forces applied to entities
         p_force = [None] * len(self.entities)
         # apply agent physical controls
