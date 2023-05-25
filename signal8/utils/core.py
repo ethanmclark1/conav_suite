@@ -1,3 +1,4 @@
+import threading
 import numpy as np
 
 
@@ -9,21 +10,9 @@ class EntityState:  # physical/external base state of all entities
         self.p_vel = None
 
 
-class AgentState(
-    EntityState
-):  # state of agents (including communication and internal/mental state)
+class AgentState(EntityState):  # state of agents
     def __init__(self):
         super().__init__()
-        # communication utterance
-        self.c = None
-
-
-class Action:  # action of the agent
-    def __init__(self):
-        # physical action
-        self.u = None
-        # communication action
-        self.c = None
 
 
 class Entity:  # properties and state of physical world entity
@@ -36,13 +25,8 @@ class Entity:  # properties and state of physical world entity
         self.movable = False
         # entity collides with others
         self.collide = True
-        # material density (affects mass)
-        self.density = 25.0
         # color
         self.color = None
-        # max speed and accel
-        self.max_speed = None
-        self.accel = None
         # state
         self.state = EntityState()
         # mass
@@ -61,43 +45,33 @@ class Landmark(Entity):  # properties of goal and static obstacles entities
 class DynamicObstacle(Entity):  # properties of dynamic obstacles entities
     def __init__(self):
         super().__init__()
+        self.lock = threading.Lock()
         # dynamic obstacles are movable by default
         self.movable = True
-        # cannot send communication signals
-        self.silent = False
-        # cannot observe the world
-        self.blind = False
-        # physical motor noise amount
-        self.u_noise = None
-        # control range
-        self.u_range = 1.0
         # action
-        self.action = Action()
+        self.action = None
         # script behavior to execute
         self.action_callback = None
-
+    
+    # updates the state of the obstacle
+    def move(self, dt=0.1, damping=0.25):
+        with self.lock:
+            self.state.p_vel = self.state.p_vel * (1 - damping)
+            self.state.p_vel += (self.action / self.mass) * dt
+            self.state.p_pos += self.state.p_vel * dt
+        
 
 class Agent(Entity):  # properties of agent entities
     def __init__(self):
         super().__init__()
         # agents are movable by default
         self.movable = True
-        # cannot send communication signals
-        self.silent = False
-        # cannot observe the world
-        self.blind = False
-        # physical motor noise amount
-        self.u_noise = None
-        # communication noise amount
-        self.c_noise = None
         # reached goal state
         self.has_payload = False
-        # control range
-        self.u_range = 1.0
         # state
         self.state = AgentState()
         # action
-        self.action = Action()
+        self.action = None
 
 class World:  # multi-agent world
     def __init__(self, dynamic_obstacles=False):
@@ -105,8 +79,6 @@ class World:  # multi-agent world
         self.agents = []
         self.goals = []
         self.obstacles = []
-        # communication channel dimensionality
-        self.dim_c = 0
         # position dimensionality
         self.dim_p = 2
         # color dimensionality
@@ -143,31 +115,23 @@ class World:  # multi-agent world
         p_force = self.apply_environment_force(p_force)
         # integrate physical state
         self.integrate_state(p_force)
-        # update agent state
-        for agent in self.agents:
-            self.update_agent_state(agent)
 
     # gather agent action forces
     def apply_action_force(self, p_force):
         # set applied forces
         for i, agent in enumerate(self.agents):
             if agent.movable:
-                noise = (
-                    np.random.randn(*agent.action.u.shape) * agent.u_noise
-                    if agent.u_noise
-                    else 0.0
-                )
-                p_force[i] = agent.action.u + noise
+                p_force[i] = agent.action
         return p_force
 
-    # gather physical forces acting on entities
+    # gather physical forces acting on agents
     def apply_environment_force(self, p_force):
         # simple (but inefficient) collision response
-        for a, entity_a in enumerate(self.entities):
-            for b, entity_b in enumerate(self.entities):
+        for a, agent_a in enumerate(self.agents):
+            for b, agent_b in enumerate(self.agents):
                 if b <= a:
                     continue
-                [f_a, f_b] = self.get_collision_force(entity_a, entity_b)
+                [f_a, f_b] = self.get_collision_force(agent_a, agent_b)
                 if f_a is not None:
                     if p_force[a] is None:
                         p_force[a] = 0.0
@@ -180,56 +144,27 @@ class World:  # multi-agent world
 
     # integrate physical state
     def integrate_state(self, p_force):
-        for i, entity in enumerate(self.entities):
-            if not entity.movable:
-                continue
-            entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
+        for i, agent in enumerate(self.agents):
+            agent.state.p_vel = agent.state.p_vel * (1 - self.damping)
             if p_force[i] is not None:
-                entity.state.p_vel += (p_force[i] / entity.mass) * self.dt
-            if entity.max_speed is not None:
-                speed = np.sqrt(
-                    np.square(entity.state.p_vel[0]) +
-                    np.square(entity.state.p_vel[1])
-                )
-                if speed > entity.max_speed:
-                    entity.state.p_vel = (
-                        entity.state.p_vel
-                        / np.sqrt(
-                            np.square(entity.state.p_vel[0])
-                            + np.square(entity.state.p_vel[1])
-                        )
-                        * entity.max_speed
-                    )
+                agent.state.p_vel += (p_force[i] / agent.mass) * self.dt
+            agent.state.p_pos += agent.state.p_vel * self.dt
 
-            entity.state.p_pos += entity.state.p_vel * self.dt
-
-    def update_agent_state(self, agent):
-        # set communication state (directly for now)
-        if agent.silent:
-            agent.state.c = np.zeros(self.dim_c)
-        else:
-            noise = (
-                np.random.randn(*agent.action.c.shape) * agent.c_noise
-                if agent.c_noise
-                else 0.0
-            )
-            agent.state.c = agent.action.c + noise
-
-    # get collision forces for any contact between two entities
-    def get_collision_force(self, entity_a, entity_b):
-        if (not entity_a.collide) or (not entity_b.collide):
+    # get collision forces for any contact between two agents
+    def get_collision_force(self, agent_a, agent_b):
+        if (not agent_a.collide) or (not agent_b.collide):
             return [None, None]  # not a collider
-        if entity_a is entity_b:
+        if agent_a is agent_b:
             return [None, None]  # don't collide against itself
         # compute actual distance between entities
-        delta_pos = entity_a.state.p_pos - entity_b.state.p_pos
+        delta_pos = agent_a.state.p_pos - agent_b.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         # minimum allowable distance
-        dist_min = entity_a.size + entity_b.size
+        dist_min = agent_a.size + agent_b.size
         # softmax penetration
         k = self.contact_margin
         penetration = np.logaddexp(0, -(dist - dist_min) / k) * k
         force = self.contact_force * delta_pos / dist * penetration
-        force_a = +force if entity_a.movable else None
-        force_b = -force if entity_b.movable else None
+        force_a = +force if agent_a.movable else None
+        force_b = -force if agent_b.movable else None
         return [force_a, force_b]

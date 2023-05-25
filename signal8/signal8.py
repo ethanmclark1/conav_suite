@@ -4,7 +4,7 @@ import numpy as np
 
 from gymnasium.utils import EzPickle
 from utils.scenario import BaseScenario
-from utils.core import Agent, Landmark, DynamicObstacle, World, Action
+from utils.core import Agent, Landmark, DynamicObstacle, World
 from utils.simple_env import SimpleEnv, make_env
 from utils.problems import get_problem, get_problem_list
 
@@ -58,7 +58,6 @@ class Scenario(BaseScenario):
         for i, agent in enumerate(world.agents):
             agent.name = f"agent_{i}"
             agent.collide = True
-            agent.silent = True
             agent.size = agent_radius
 
         world.goals = [Landmark() for _ in range(len(world.agents))]
@@ -77,7 +76,6 @@ class Scenario(BaseScenario):
         return world
 
     def reset_world(self, world, np_random, problem_name="v_cluster"):
-        self.stop_scripted_obstacles()
         self.get_problem_scenario(world, problem_name)
         world.problem_name = problem_name
         
@@ -92,17 +90,18 @@ class Scenario(BaseScenario):
             agent.goal.state.p_pos = np_random.uniform(*zip(*world.goal_constr))
         
         # set state and color of obstacles
-        for obstacle in world.obstacles:
+        for i, obstacle in enumerate(world.obstacles):
             if obstacle.movable:
                 obstacle.color = np.array([0.5, 0, 0])
                 obstacle.state.p_vel = np.zeros(world.dim_p)
-                obstacle.state.p_pos = np.random.uniform(*zip(*world.dynamic_obstacle_constr))
+                obstacle.state.p_pos = np.random.uniform(*zip(*world.dynamic_obstacle_constr[i % len(world.dynamic_obstacle_constr)]))
                 obstacle.action_callback = self.get_scripted_action
             else:
                 obstacle.color = np.array([0.2, 0.2, 0.2])
                 obstacle.state.p_vel = np.zeros(world.dim_p)
                 obstacle.state.p_pos = np_random.uniform(*zip(*world.static_obstacle_constr))  
 
+        # Creates a new thread for each dynamic obstacle
         self.scripted_obstacle_running = True
         for obstacle in world.obstacles:
             if obstacle.movable:
@@ -132,9 +131,7 @@ class Scenario(BaseScenario):
     
     # Get scripted action for adversarial agents s.t. they move in a straight line along their constraint
     def get_scripted_action(self, obs, world):
-        action = Action()
-        action.u = np.zeros(world.dim_p)
-        action.c = np.zeros(world.dim_c)
+        action = np.zeros(world.dim_p)
         
         constr = world.dynamic_obstacle_constr[int(obs.name[-1])]
         constr_size = [(abs(point[0]) + abs(point[1])) for point in constr]
@@ -143,24 +140,24 @@ class Scenario(BaseScenario):
         # Always start off moving in the positive direction
         if dimension == 'horizontal':
             if (obs.state.p_vel == 0).all():
-                action.u[0] = +1.0
+                action[0] = +1.0
             else:  # If moving, continue in the direction of velocity
                 if obs.state.p_pos[0] <= constr[0][0]:  # If at left constraint, move right
-                    action.u[0] = +1.0
+                    action[0] = +1.0
                 elif obs.state.p_pos[0] >= constr[1][0]:  # If at right constraint, move left
-                    action.u[0] = -1.0
+                    action[0] = -1.0
                 else:  # Otherwise, follow the direction of velocity
-                    action.u[0] = np.sign(obs.state.p_vel[0])
+                    action[0] = np.sign(obs.state.p_vel[0])
         else:
             if (obs.state.p_vel == 0).all():
-                action.u[1] = +1.0
+                action[1] = +1.0
             else:  # If moving, continue in the direction of velocity
                 if obs.state.p_pos[1] <= constr[0][1]:  # If at bottom constraint, move up
-                    action.u[1] = +1.0
+                    action[1] = +1.0
                 elif obs.state.p_pos[1] >= constr[1][1]:  # If at top constraint, move down
-                    action.u[1] = -1.0
+                    action[1] = -1.0
                 else:  # Otherwise, follow the direction of velocity
-                    action.u[1] = np.sign(obs.state.p_vel[1])
+                    action[1] = np.sign(obs.state.p_vel[1])
 
         return action
     
@@ -168,9 +165,9 @@ class Scenario(BaseScenario):
     def run_scripted_obstacle(self, world, obstacle):
         while self.scripted_obstacle_running:
             action = self.get_scripted_action(obstacle, world)
-            sensitivity = obstacle.accel if obstacle.accel is not None else 5.0
-            obstacle.action.u = action.u * sensitivity
-            print(obstacle.action.u)
+            sensitivity = 5.0
+            obstacle.action = action * sensitivity
+            obstacle.move()
             time.sleep(0.1)
 
     # Stop all threads for scripted obstacles

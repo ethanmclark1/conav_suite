@@ -80,11 +80,6 @@ class SimpleEnv(AECEnv):
                 space_dim = 0
             else:
                 space_dim = 1
-            if not agent.silent:
-                if self.continuous_actions:
-                    space_dim += self.world.dim_c
-                else:
-                    space_dim *= self.world.dim_c
 
             obs_dim = len(self.scenario.observation(agent, self.world))
             state_dim += obs_dim
@@ -136,6 +131,9 @@ class SimpleEnv(AECEnv):
         return np.concatenate(states, axis=None)
 
     def reset(self, seed=None, return_info=False, options=None):
+        if hasattr(self, "scenario") and self.scenario.scripted_obstacle_running:
+            self.scenario.stop_scripted_obstacles()
+        
         if seed is not None:
             self.seed(seed=seed)
         problem_scenario = options['problem_name'] if options is not None else 'v_cluster'
@@ -166,10 +164,7 @@ class SimpleEnv(AECEnv):
                 else:
                     scenario_action.append(action % mdim)
                     action //= mdim
-            if not agent.silent:
-                scenario_action.append(action)
-            self._set_action(scenario_action, agent,
-                             self.action_spaces[agent.name])
+            self._set_action(scenario_action, agent, self.action_spaces[agent.name])
 
         self.world.step()
 
@@ -191,38 +186,25 @@ class SimpleEnv(AECEnv):
 
     # set env action for a particular agent
     def _set_action(self, action, agent, action_space, time=None):
-        agent.action.u = np.zeros(self.world.dim_p)
-        agent.action.c = np.zeros(self.world.dim_c)
-
         if agent.movable:
             # physical action
-            agent.action.u = np.zeros(self.world.dim_p)
+            agent.action = np.zeros(self.world.dim_p)
             if self.continuous_actions:
                 # Process continuous action as in OpenAI MPE
-                agent.action.u[0] += action[0][1] - action[0][2]
-                agent.action.u[1] += action[0][3] - action[0][4]
+                agent.action[0] += action[0][1] - action[0][2]
+                agent.action[1] += action[0][3] - action[0][4]
             else:
                 # process discrete action
                 if action[0] == 1:
-                    agent.action.u[0] = -1.0
-                if action[0] == 2:
-                    agent.action.u[0] = +1.0
-                if action[0] == 3:
-                    agent.action.u[1] = -1.0
-                if action[0] == 4:
-                    agent.action.u[1] = +1.0
+                    agent.action[0] = -1.0
+                elif action[0] == 2:
+                    agent.action[0] = +1.0
+                elif action[0] == 3:
+                    agent.action[1] = -1.0
+                elif action[0] == 4:
+                    agent.action[1] = +1.0
             sensitivity = 5.0
-            if agent.accel is not None:
-                sensitivity = agent.accel
-            agent.action.u *= sensitivity
-            action = action[1:]
-        if not agent.silent:
-            # communication action
-            if self.continuous_actions:
-                agent.action.c = action[0]
-            else:
-                agent.action.c = np.zeros(self.world.dim_c)
-                agent.action.c[action[0]] = 1.0
+            agent.action *= sensitivity
             action = action[1:]
         # make sure we used all elements of action
         assert len(action) == 0
@@ -306,29 +288,6 @@ class SimpleEnv(AECEnv):
             assert (
                 0 < x < self.width and 0 < y < self.height
             ), f"Coordinates {(x, y)} are out of bounds."
-
-            # text
-            if isinstance(entity, Agent):
-                if entity.silent:
-                    continue
-                if np.all(entity.state.c == 0):
-                    word = "_"
-                elif self.continuous_actions:
-                    word = (
-                        "[" +
-                        ",".join(
-                            [f"{comm:.2f}" for comm in entity.state.c]) + "]"
-                    )
-
-                message = entity.name + " sends " + word + "   "
-                message_x_pos = self.width * 0.05
-                message_y_pos = self.height * 0.95 - \
-                    (self.height * 0.05 * text_line)
-                self.game_font.render_to(
-                    self.screen, (message_x_pos,
-                                  message_y_pos), message, (0, 0, 0)
-                )
-                text_line += 1
 
     def close(self):
         if self.renderOn:
