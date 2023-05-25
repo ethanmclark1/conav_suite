@@ -208,6 +208,34 @@ class SimpleEnv(AECEnv):
             action = action[1:]
         # make sure we used all elements of action
         assert len(action) == 0
+    
+    # TODO: Ensure that this is working correctly
+    # TODO: If agent reaches goal, episode is not over. Agent must also return back to the start
+    # Check if episode is terminated or truncated
+    def _episode_status(self):        
+        dynamic_obs = [obs for obs in self.world.obstacles if obs.movable]
+        static_obs = [obs for obs in self.world.obstacles if not obs.movable]
+        
+        goal_dist = [np.linalg.norm(agent.state.p_pos - agent.goal.state.p_pos) for agent in self.world.agents]
+        static_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in static_obs)
+                        for agent in self.world.agents]
+
+        min_goal_dist = [agent.size + agent.goal.size for agent in self.world.agents]
+        min_static_obs_dist = [agent.size + obs.size for agent, obs in zip(self.world.agents, static_obs)]
+        
+        crossed_threshold_static = [dist <= min_dist for dist, min_dist in zip(static_obs_dist, min_static_obs_dist)]
+        
+        with self.scenario.obstacle_lock:
+            min_dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
+                                    for agent in self.world.agents]
+        
+        min_dynamic_obs_dist = [agent.size + obs.size for agent, obs in zip(self.world.agents, dynamic_obs)]
+        crossed_threshold_dynamic = [dist <= min_dist for dist, min_dist in zip(min_dynamic_obs_dist, min_dynamic_obs_dist)]
+
+        truncation = [crossed_stat or crossed_dyn for crossed_stat, crossed_dyn in zip(crossed_threshold_static, crossed_threshold_dynamic)]
+        termination = [dist <= min_dist for dist, min_dist in zip(goal_dist, min_goal_dist)] or dynamic_obs
+
+        return {'termination': termination, 'truncation': truncation}
 
     def step(self, action):
         if (
@@ -216,19 +244,18 @@ class SimpleEnv(AECEnv):
         ):
             self._was_dead_step(action)
             return
-        
+
         current_idx = self._index_map[self.agent_selection]
+        next_idx = (current_idx + 1) % self.num_agents
+        self.agent_selection = self._agent_selector.next()
         self.current_actions[current_idx] = action
 
-        self._execute_world_step()
-        goal_dist = np.linalg.norm(self.world.agents[0].state.p_pos-self.world.agents[0].goal.state.p_pos)
-        landmark_dist = [np.linalg.norm(self.world.agents[0].state.p_pos - landmark.state.p_pos) for landmark in self.world.landmarks[1:]]
-        self.steps += 1
-        min_dist = self.world.agents[0].size + self.world.agents[0].goal.size
-        if self.steps >= self.max_cycles or min(landmark_dist) <= min_dist:
-            self.truncations[self.agent_selection] = True
-        if min_dist >= goal_dist:
-            self.terminations[self.agent_selection] = True
+        if next_idx == 0:
+            self.steps += 1
+            self._execute_world_step()
+            status = self._episode_status()
+            self.terminations = status['termination']
+            self.truncations = status['truncation']
 
         if self.render_mode == "human":
             self.render()

@@ -37,17 +37,18 @@ class Entity:  # properties and state of physical world entity
         return self.initial_mass
 
 
-class Landmark(Entity):  # properties of goal and static obstacles entities
+class Goal(Entity): # properties of goal entities
     def __init__(self):
         super().__init__()
+        self.size = 0.05
 
 
-class DynamicObstacle(Entity):  # properties of dynamic obstacles entities
+class Obstacle(Entity):  # properties of obstacles entities
     def __init__(self):
         super().__init__()
         self.lock = threading.Lock()
-        # dynamic obstacles are movable by default
-        self.movable = True
+        # entity can be moved / pushed
+        self.movable = False
         # action
         self.action = None
         # script behavior to execute
@@ -74,7 +75,7 @@ class Agent(Entity):  # properties of agent entities
         self.action = None
 
 class World:  # multi-agent world
-    def __init__(self, dynamic_obstacles=False):
+    def __init__(self):
         # list of agents and entities (can change at execution-time!)
         self.agents = []
         self.goals = []
@@ -90,8 +91,6 @@ class World:  # multi-agent world
         # contact response parameters
         self.contact_force = 1e2
         self.contact_margin = 1e-3
-        # has dynamic obstacles
-        self.dynamic_obstacles = dynamic_obstacles
         # problem scenarios
         self.problem_scenarios = None
         self.problem_name = None
