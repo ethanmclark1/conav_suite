@@ -130,13 +130,11 @@ class SimpleEnv(AECEnv):
         )
         return np.concatenate(states, axis=None)
 
-    def reset(self, seed=None, return_info=False, options=None):
-        if hasattr(self, "scenario") and self.scenario.scripted_obstacle_running:
-            self.scenario.stop_scripted_obstacles()
-        
+    def reset(self, seed=None, return_info=False, options=None):        
         if seed is not None:
             self.seed(seed=seed)
-        problem_scenario = options['problem_name'] if options is not None else 'v_cluster'
+            
+        problem_scenario = options['problem_name']
         self.scenario.reset_world(self.world, self.np_random, problem_scenario)
 
         self.agents = self.possible_agents[:]
@@ -209,33 +207,44 @@ class SimpleEnv(AECEnv):
         # make sure we used all elements of action
         assert len(action) == 0
     
-    # TODO: Ensure that this is working correctly
-    # TODO: If agent reaches goal, episode is not over. Agent must also return back to the start
+    # TODO: Validate this function
     # Check if episode is terminated or truncated
     def _episode_status(self):        
         dynamic_obs = [obs for obs in self.world.obstacles if obs.movable]
         static_obs = [obs for obs in self.world.obstacles if not obs.movable]
+    
+        goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal.size
+        static_obs_threshold = self.world.agents[0].size + static_obs[0].size
         
         goal_dist = [np.linalg.norm(agent.state.p_pos - agent.goal.state.p_pos) for agent in self.world.agents]
         static_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in static_obs)
                         for agent in self.world.agents]
-
-        min_goal_dist = [agent.size + agent.goal.size for agent in self.world.agents]
-        min_static_obs_dist = [agent.size + obs.size for agent, obs in zip(self.world.agents, static_obs)]
         
-        crossed_threshold_static = [dist <= min_dist for dist, min_dist in zip(static_obs_dist, min_static_obs_dist)]
+        crossed_threshold_static = [dist <= static_obs_threshold for dist in static_obs_dist]
         
         with self.scenario.obstacle_lock:
-            min_dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
-                                    for agent in self.world.agents]
+            dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
+                                    for agent in self.world.agents]       
+            dynamic_obs_threshold = self.world.agents[0].size + dynamic_obs[0].size
+            
+        crossed_threshold_dynamic = [dist <= dynamic_obs_threshold for dist in dynamic_obs_dist]
+                    
+        truncations = [crossed_stat or crossed_dyn for crossed_stat, crossed_dyn in zip(crossed_threshold_static, crossed_threshold_dynamic)]
+        truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
         
-        min_dynamic_obs_dist = [agent.size + obs.size for agent, obs in zip(self.world.agents, dynamic_obs)]
-        crossed_threshold_dynamic = [dist <= min_dist for dist, min_dist in zip(min_dynamic_obs_dist, min_dynamic_obs_dist)]
+        for i, dist in enumerate(goal_dist):
+            if dist <= goal_dist_threshold:
+                self.agents[i].reached_goal = True
+        
+        terminations = [False] * self.num_agents
+        for i, agent in enumerate(self.world.agents):
+            if agent.reached_goal:
+                dist_to_start = np.linalg.norm(agent.state.p_pos - agent.start_pos)
+                start_dist_threshold = self.world.agents[0].size * 2
+                if dist_to_start <= start_dist_threshold:
+                    terminations[i] = True
 
-        truncation = [crossed_stat or crossed_dyn for crossed_stat, crossed_dyn in zip(crossed_threshold_static, crossed_threshold_dynamic)]
-        termination = [dist <= min_dist for dist, min_dist in zip(goal_dist, min_goal_dist)] or dynamic_obs
-
-        return {'termination': termination, 'truncation': truncation}
+        return {'terminations': terminations, 'truncations': truncations}
 
     def step(self, action):
         if (

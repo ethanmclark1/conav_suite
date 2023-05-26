@@ -1,4 +1,3 @@
-import threading
 import numpy as np
 
 
@@ -20,7 +19,7 @@ class Entity:  # properties and state of physical world entity
         # name
         self.name = ""
         # properties:
-        self.size = 0.050
+        self.size = 0.1
         # entity can move / be pushed
         self.movable = False
         # entity collides with others
@@ -46,7 +45,6 @@ class Goal(Entity): # properties of goal entities
 class Obstacle(Entity):  # properties of obstacles entities
     def __init__(self):
         super().__init__()
-        self.lock = threading.Lock()
         # entity can be moved / pushed
         self.movable = False
         # action
@@ -56,10 +54,9 @@ class Obstacle(Entity):  # properties of obstacles entities
     
     # updates the state of the obstacle
     def move(self, dt=0.1, damping=0.25):
-        with self.lock:
-            self.state.p_vel = self.state.p_vel * (1 - damping)
-            self.state.p_vel += (self.action / self.mass) * dt
-            self.state.p_pos += self.state.p_vel * dt
+        self.state.p_vel = self.state.p_vel * (1 - damping)
+        self.state.p_vel += (self.action / self.mass) * dt
+        self.state.p_pos += self.state.p_vel * dt
         
 
 class Agent(Entity):  # properties of agent entities
@@ -68,7 +65,11 @@ class Agent(Entity):  # properties of agent entities
         # agents are movable by default
         self.movable = True
         # reached goal state
-        self.has_payload = False
+        self.reached_goal = False
+        # reached start state after reaching goal
+        self.returned_to_safety = False
+        # starting physical position
+        self.start_pos = None
         # state
         self.state = AgentState()
         # action
