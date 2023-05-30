@@ -39,7 +39,6 @@ class Entity:  # properties and state of physical world entity
 class Goal(Entity): # properties of goal entities
     def __init__(self):
         super().__init__()
-        self.size = 0.05
 
 
 class Obstacle(Entity):  # properties of obstacles entities
@@ -93,7 +92,7 @@ class World:  # multi-agent world
         self.contact_force = 1e2
         self.contact_margin = 1e-3
         # problem scenarios
-        self.problem_scenarios = None
+        self.problem_scenarios = []
         self.problem_name = None
         self.start_constr = None
         self.goal_constr = None

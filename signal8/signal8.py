@@ -1,6 +1,7 @@
 import time
 import copy
 import random
+import logging
 import threading
 import numpy as np
 
@@ -32,8 +33,10 @@ env = make_env(raw_env)
 class Scenario(BaseScenario):
     def make_world(self, num_agents):
         world = World()
+        self._add_logger()
         world.problem_scenarios = get_problem_list()
         
+        self.obstacle_locks = []
         self.scripted_obstacle_threads = []
         self.scripted_obstacle_running = False
 
@@ -58,7 +61,6 @@ class Scenario(BaseScenario):
     def _set_problem_scenario(self, world, np_random, problem_name):
         if problem_name is None:
             problem_name = np_random.choice(world.problem_scenarios)
-        problem_name = 'precision_farming_0'
         problem = get_problem(problem_name)
         world.problem_name = problem_name
         world.start_constr = problem['start']
@@ -66,7 +68,10 @@ class Scenario(BaseScenario):
         world.static_obstacle_constr = problem['static_obs']
         world.dynamic_obstacle_constr = problem['dynamic_obs']
     
-    # Reset position of agent(s) and goal(s)
+    """
+    Returns goal constraints that haven't been selected to be used as an obstacle
+    for the precision farming case (i.e., crop that wasn't selected as goal becomes an obstacle)
+    """
     def _reset_agents_and_goals(self, world, np_random):
         temp_start_constr = list(copy.copy(world.start_constr))
         temp_goal_constr = list(copy.copy(world.goal_constr))
@@ -91,7 +96,7 @@ class Scenario(BaseScenario):
     def _reset_dynamic_obstacle(self, world, obstacle, np_random, temp_dynamic_obs_constr):
         obstacle.size = 0.025
         obstacle.movable = True
-        obstacle.lock = threading.Lock()
+        self.obstacle_locks += [threading.Lock()]
         obstacle.color = np.array([0.5, 0, 0])
         obstacle.state.p_vel = np.zeros(world.dim_p)
         dynamic_obs_constr = random.choice(temp_dynamic_obs_constr)
@@ -134,14 +139,16 @@ class Scenario(BaseScenario):
     
     # Start a thread for each dynamic obstacle
     def _start_scripted_obstacles(self, world):
+        idx = 0
         self.scripted_obstacle_running = True
         for obstacle in world.obstacles:
             if obstacle.movable:
-                t = threading.Thread(target=self.run_scripted_obstacle, args=(world, obstacle,))
+                t = threading.Thread(target=self.run_scripted_obstacle, args=(world, obstacle, idx))
                 t.start()
                 self.scripted_obstacle_threads.append(t)   
+                idx += 1
     
-    # TODO: Validate that this function works
+    # Reset entities in world
     def reset_world(self, world, np_random, problem_name=None):
         self._stop_scripted_obstacles()
         self._set_problem_scenario(world, np_random, problem_name)
@@ -170,7 +177,7 @@ class Scenario(BaseScenario):
         elif problem_name == 'disaster_response_1':
             obs.size *= 1.100
         elif problem_name == 'disaster_response_2':
-            obs.size *= 1.075
+            obs.size *= 1.150
         elif problem_name == 'disaster_response_3':
             obs.size *= 1.050
         elif problem_name == 'precision_farming_0':
@@ -185,13 +192,15 @@ class Scenario(BaseScenario):
         return action
     
     # Run a thread for each scripted obstacle
-    def run_scripted_obstacle(self, world, obstacle):
+    def run_scripted_obstacle(self, world, obstacle, obstacle_idx):
         sensitivity = 5.0
         while self.scripted_obstacle_running:
-            with obstacle.lock:
+            with self.obstacle_locks[obstacle_idx]:
+                self.logger.debug(f'{obstacle.name} started at size: {obstacle.size}, position: {obstacle.state.p_pos}')
                 action = self.get_scripted_action(obstacle, world)
                 obstacle.action = action * sensitivity
                 obstacle.move()
+                self.logger.debug(f'{obstacle.name} is now: {obstacle.size}, position: {obstacle.state.p_pos}')
                 time.sleep(0.1)
 
     # Stop all threads for scripted obstacles
@@ -200,3 +209,20 @@ class Scenario(BaseScenario):
         for t in self.scripted_obstacle_threads:
             t.join()
         self.scripted_obstacle_threads.clear()
+        self.obstacle_locks.clear()
+        
+    def _add_logger(self):
+        # Create a logger for the scenario
+        self.logger = logging.getLogger('Scenario')
+        self.logger.setLevel(logging.DEBUG)
+
+        # Create a console handler for the logger
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+
+        # Create a formatter for the log messages
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+
+        # Add the console handler to the logger
+        self.logger.addHandler(ch)

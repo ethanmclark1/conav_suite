@@ -63,9 +63,7 @@ class SimpleEnv(AECEnv):
         self.scenario.reset_world(self.world, self.np_random)
         self.agents = [agent.name for agent in self.world.agents]
         self.possible_agents = self.agents[:]
-        self._index_map = {
-            agent.name: idx for idx, agent in enumerate(self.world.agents)
-        }
+        self._index_map = {agent.name: idx for idx, agent in enumerate(self.world.agents)}
 
         self._agent_selector = agent_selector(self.agents)
 
@@ -207,7 +205,6 @@ class SimpleEnv(AECEnv):
         # make sure we used all elements of action
         assert len(action) == 0
     
-    # TODO: Validate this function
     # Check if episode is terminated or truncated
     def _episode_status(self):        
         dynamic_obs = [obs for obs in self.world.obstacles if obs.movable]
@@ -218,33 +215,36 @@ class SimpleEnv(AECEnv):
         
         goal_dist = [np.linalg.norm(agent.state.p_pos - agent.goal.state.p_pos) for agent in self.world.agents]
         static_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in static_obs)
-                        for agent in self.world.agents]
+                           for agent in self.world.agents]
         
         crossed_threshold_static = [dist <= static_obs_threshold for dist in static_obs_dist]
         
-        with self.scenario.obstacle_lock:
-            dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
-                                    for agent in self.world.agents]       
-            dynamic_obs_threshold = self.world.agents[0].size + dynamic_obs[0].size
+        try:
+            for i in range(len(dynamic_obs)):
+                self.scenario.obstacle_locks[i].acquire()
+                dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
+                                    for agent in self.world.agents] 
+                dynamic_obs_threshold = [agent.size + obs.size for agent, obs in zip(self.world.agents, dynamic_obs)]   
             
-        crossed_threshold_dynamic = [dist <= dynamic_obs_threshold for dist in dynamic_obs_dist]
-                    
-        truncations = [crossed_stat or crossed_dyn for crossed_stat, crossed_dyn in zip(crossed_threshold_static, crossed_threshold_dynamic)]
-        truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
-        
-        for i, dist in enumerate(goal_dist):
-            if dist <= goal_dist_threshold:
-                self.agents[i].reached_goal = True
-        
-        terminations = [False] * self.num_agents
-        for i, agent in enumerate(self.world.agents):
-            if agent.reached_goal:
-                dist_to_start = np.linalg.norm(agent.state.p_pos - agent.start_pos)
-                start_dist_threshold = self.world.agents[0].size * 2
-                if dist_to_start <= start_dist_threshold:
-                    terminations[i] = True
-
-        return {'terminations': terminations, 'truncations': truncations}
+            crossed_threshold_dynamic = [dist <= threshold for dist, threshold in zip(dynamic_obs_dist, dynamic_obs_threshold)]
+                        
+            truncations = [crossed_stat or crossed_dyn for crossed_stat, crossed_dyn in zip(crossed_threshold_static, crossed_threshold_dynamic)]
+            truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
+            
+            terminations = [False] * self.num_agents
+            for i, dist in enumerate(goal_dist):
+                if dist <= goal_dist_threshold:
+                    self.agents[i].reached_goal = True
+            
+            for i, agent in enumerate(self.world.agents):
+                if agent.reached_goal:
+                    dist_to_start = np.linalg.norm(agent.state.p_pos - agent.start_pos)
+                    start_dist_threshold = self.world.agents[0].size * 2
+                    if dist_to_start <= start_dist_threshold:
+                        terminations[i] = True
+        finally:
+            [self.scenario.obstacle_locks[i].release() for i, _ in enumerate(dynamic_obs)]
+            return {'terminations': terminations, 'truncations': truncations}
 
     def step(self, action):
         if (
@@ -263,8 +263,8 @@ class SimpleEnv(AECEnv):
             self.steps += 1
             self._execute_world_step()
             status = self._episode_status()
-            self.terminations = status['termination']
-            self.truncations = status['truncation']
+            self.terminations = status['terminations']
+            self.truncations = status['truncations']
 
         if self.render_mode == "human":
             self.render()
