@@ -211,18 +211,15 @@ class Scenario(BaseScenario):
         self.scripted_obstacle_threads.clear()
         self.obstacle_locks.clear()
         
+    # Create a logger to log information from threads
     def _add_logger(self):
-        # Create a logger for the scenario
-        self.logger = logging.getLogger('Scenario')
+        self.logger = logging.getLogger('Dynamic Obstacles')
         self.logger.setLevel(logging.DEBUG)
 
-        # Create a console handler for the logger
         ch = logging.StreamHandler()
         ch.setLevel(logging.DEBUG)
 
-        # Create a formatter for the log messages
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
 
-        # Add the console handler to the logger
         self.logger.addHandler(ch)
