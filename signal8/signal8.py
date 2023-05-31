@@ -11,11 +11,9 @@ from utils.core import Agent, Goal, Obstacle, World
 from utils.simple_env import SimpleEnv, make_env
 from utils.problems import get_problem, get_problem_list
 
+
 class raw_env(SimpleEnv, EzPickle):
-    def __init__(
-        self, 
-        num_agents=1,
-        render_mode="human"):
+    def __init__(self, num_agents=1, render_mode="human"):
         
         scenario = Scenario()
         world = scenario.make_world(num_agents)
@@ -25,7 +23,6 @@ class raw_env(SimpleEnv, EzPickle):
             world=world, 
             render_mode=render_mode,
             max_cycles=500, 
-            continuous_actions=False,
         )
         
 env = make_env(raw_env)
@@ -45,7 +42,7 @@ class Scenario(BaseScenario):
             agent.name = f"agent_{i}"
             agent.collide = True
 
-        world.goals = [Goal() for _ in range(len(world.agents))]
+        world.goals = [Goal() for _ in range(len(world.agents*2))]
         for i, goal in enumerate(world.goals):
             goal.name = f"goal_{i}"
             goal.collide = False
@@ -61,6 +58,8 @@ class Scenario(BaseScenario):
     def _set_problem_scenario(self, world, np_random, problem_name):
         if problem_name is None:
             problem_name = np_random.choice(world.problem_scenarios)
+        # TODO: Remove this line
+        problem_name = 'precision_farming_0'
         problem = get_problem(problem_name)
         world.problem_name = problem_name
         world.start_constr = problem['start']
@@ -73,22 +72,24 @@ class Scenario(BaseScenario):
     for the precision farming case (i.e., crop that wasn't selected as goal becomes an obstacle)
     """
     def _reset_agents_and_goals(self, world, np_random):
-        temp_start_constr = list(copy.copy(world.start_constr))
         temp_goal_constr = list(copy.copy(world.goal_constr))
         for i, agent in enumerate(world.agents):
-            agent.color = np.array([0, 0.8, 0])
+            agent.color = np.array([1, 0.95, 0.8])
             agent.state.p_vel = np.zeros(world.dim_p)
-            agent_constr = random.choice(temp_start_constr)
+            agent_constr = random.choice(world.start_constr)
             agent.state.p_pos = np_random.uniform(*zip(*agent_constr))
-            agent.start_pos = copy.copy(agent.state.p_pos)
-            temp_start_constr.remove(agent_constr)
 
-            agent.goal = world.goals[i]
-            agent.goal.color = np.array([0, 0, 0.8])
-            agent.goal.state.p_vel = np.zeros(world.dim_p)
+            agent.goal_a = world.goals[i]
+            agent.goal_a.color = np.array([0.835, 0.90, 0.831])
+            agent.goal_a.state.p_vel = np.zeros(world.dim_p)
             goal_constr = random.choice(temp_goal_constr)
-            agent.goal.state.p_pos = np_random.uniform(*zip(*goal_constr))
+            agent.goal_a.state.p_pos = np_random.uniform(*zip(*goal_constr))
             temp_goal_constr.remove(goal_constr)
+            
+            agent.goal_b = world.goals[len(world.goals) - 1 - i]
+            agent.goal_b.color = np.array([0.85, 0.90, 0.99])
+            agent.goal_b.state.p_vel = np.zeros(world.dim_p)
+            agent.goal_b.state.p_pos = copy.copy(agent.state.p_pos)
 
         return temp_goal_constr
     
@@ -97,16 +98,15 @@ class Scenario(BaseScenario):
         obstacle.size = 0.025
         obstacle.movable = True
         self.obstacle_locks += [threading.Lock()]
-        obstacle.color = np.array([0.5, 0, 0])
+        obstacle.color = np.array([0.26, 0.32, 0.36])
         obstacle.state.p_vel = np.zeros(world.dim_p)
         dynamic_obs_constr = random.choice(temp_dynamic_obs_constr)
         obstacle.state.p_pos = np_random.uniform(*zip(*dynamic_obs_constr))
-        obstacle.action_callback = self.get_scripted_action
         temp_dynamic_obs_constr.remove(dynamic_obs_constr)
 
     # Reset position of static obstacles, taking leftover entities from goal constraints
     def _reset_static_obstacle(self, world, obstacle, np_random, temp_static_obs_constr):
-        obstacle.color = np.array([0.2, 0.2, 0.2])
+        obstacle.color = np.array([0.97, 0.801, 0.8])
         obstacle.state.p_vel = np.zeros(world.dim_p)
         static_obs_constr = random.choice(temp_static_obs_constr)
         obstacle.state.p_pos = np_random.uniform(*zip(*static_obs_constr))  
@@ -128,7 +128,8 @@ class Scenario(BaseScenario):
         temp_static_obs_constr += leftover_entities
         temp_dynamic_obs_constr = list(copy.copy(world.dynamic_obstacle_constr))
         
-        num_dynamic_obs = len(temp_dynamic_obs_constr)
+        self.status = 'moving_to_destination'
+        num_dynamic_obs = len(temp_dynamic_obs_constr)        
         self._match_obstacles_to_problem(world, len(temp_static_obs_constr))
 
         for i, obstacle in enumerate(world.obstacles):
@@ -148,27 +149,72 @@ class Scenario(BaseScenario):
                 self.scripted_obstacle_threads.append(t)   
                 idx += 1
     
-    # Reset entities in world
+    """
+    Entity colors:
+    agent: yellow
+    goal_a: green
+    goal_b: blue
+    static obstacles: red
+    dynamic obstacles: greyish-black
+    """
     def reset_world(self, world, np_random, problem_name=None):
         self._stop_scripted_obstacles()
         self._set_problem_scenario(world, np_random, problem_name)
         leftover_entities = self._reset_agents_and_goals(world, np_random)
         self._reset_obstacles(world, np_random, leftover_entities)
-        self._start_scripted_obstacles(world)
+        if problem_name is not None:
+            self._start_scripted_obstacles(world)
     
-    # Do not need to implement this function
+    # TODO: Figure out a reward function
     def reward(self, agent, world):
         return 0
-
+    
     def observation(self, agent, world):
-        return np.concatenate((agent.state.p_pos, agent.state.p_vel))
+        agent_pos = agent.state.p_pos
+        agent_vel = agent.state.p_vel
         
-    # TODO: Implement behavior for scripted obstacles
+        num_obstacles = len(world.obstacles)
+        max_observable_dist = agent.max_observable_dist
+        
+        observed_obstacles = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_obstacles)]
+        observed_goal = np.full_like(agent_pos, max_observable_dist)
+        
+        for i, obstacle in enumerate(world.obstacles):
+            if obstacle.movable:
+                with self.obstacle_locks[i]:
+                    obs_pos = obstacle.state.p_pos
+            else:
+                obs_pos = obstacle.state.p_pos
+            relative_pos = obs_pos - agent_pos
+            dist = np.linalg.norm(relative_pos)
+            if dist <= max_observable_dist:
+                observed_obstacles[i] = relative_pos
+                
+        goal_pos = agent.goal_b.state.p_pos if agent.reached_goal else agent.goal_a.state.p_pos
+        relative_goal_pos = goal_pos - agent_pos
+        goal_dist = np.linalg.norm(relative_goal_pos)
+        if goal_dist <= max_observable_dist:
+            observed_goal = relative_goal_pos
+        
+        return np.concatenate((agent_pos, agent_vel, np.concatenate(observed_obstacles, axis=0), observed_goal))
+            
+    # Run a thread for each scripted obstacle
+    def run_scripted_obstacle(self, world, obstacle, obstacle_idx):
+        sensitivity = 5.0
+        while self.scripted_obstacle_running:
+            with self.obstacle_locks[obstacle_idx]:
+                self.logger.debug(f'{obstacle.name} started at size: {obstacle.size}, position: {obstacle.state.p_pos}')
+                action = self._action_callback(obstacle, world)
+                obstacle.action = action * sensitivity
+                obstacle.move()
+                self.logger.debug(f'{obstacle.name} is now: {obstacle.size}, position: {obstacle.state.p_pos}')
+                time.sleep(0.1)
+        
     """
     Disaster Response: Increase size of obstacle to resemble increasing size of fire/flood
     Precision Farming: Move obstacle in a zamboni pattern to resemble the tractor
     """
-    def get_scripted_action(self, obs, world):
+    def _action_callback(self, obs, world):
         action = np.zeros(world.dim_p)
         
         problem_name = world.problem_name
@@ -180,29 +226,70 @@ class Scenario(BaseScenario):
             obs.size *= 1.150
         elif problem_name == 'disaster_response_3':
             obs.size *= 1.050
-        elif problem_name == 'precision_farming_0':
-            action[0] = +1.0
-        elif problem_name == 'precision_farming_1':
-            action[0] = -1.0
-        elif problem_name == 'precision_farming_2':
-            action[0] = +1.0
-        elif problem_name == 'precision_farming_3':
-            action[0] = -1.0
+        elif problem_name.startswith('precision_farming'):
+            scenario_num = int(problem_name.split('_')[-1])
+            action = self._get_scripted_action(obs, scenario_num)
 
         return action
     
-    # Run a thread for each scripted obstacle
-    def run_scripted_obstacle(self, world, obstacle, obstacle_idx):
-        sensitivity = 5.0
-        while self.scripted_obstacle_running:
-            with self.obstacle_locks[obstacle_idx]:
-                self.logger.debug(f'{obstacle.name} started at size: {obstacle.size}, position: {obstacle.state.p_pos}')
-                action = self.get_scripted_action(obstacle, world)
-                obstacle.action = action * sensitivity
-                obstacle.move()
-                self.logger.debug(f'{obstacle.name} is now: {obstacle.size}, position: {obstacle.state.p_pos}')
-                time.sleep(0.1)
+    # TODO: Validate this is working correctly
+    def _get_scripted_action(self, obs, scenario_num):        
+        farming_scenarios = {
+            0: {"destination": (5.0, 5.0), "direction": "right"},
+            1: {"destination": (5.0, 5.0), "direction": "right"},
+            2: {"destination": (5.0, 5.0), "direction": "right"},
+            3: {"destination": (5.0, 5.0), "direction": "right"},
+        }
+        
+        start = obs.state.p_pos
+        destination = farming_scenarios[scenario_num]["destination"]
+        direction = farming_scenarios[scenario_num]["direction"]
+        x, y = start
 
+        if self.status == "moving_to_destination":
+            if np.allclose([x, y], destination):
+                self.status = "zigzagging"
+                self.direction = "right"
+            else:
+                if x < destination[0]:
+                    action = np.array([1, 0])  # move right
+                elif x > destination[0]:
+                    action = np.array([-1, 0])  # move left
+                elif y < destination[1]:
+                    action = np.array([0, 1])  # move up
+                elif y > destination[1]:
+                    action = np.array([0, -1])  # move down
+        elif self.status == "zigzagging":
+            if y >= 1.0 and x <= 0.0:
+                self.status = "moving_to_start"
+            else:
+                if self.direction == "right":
+                    if x < 1.0:
+                        action = np.array([1, 0])  # move right
+                    else:
+                        action = np.array([0, 1])  # move up
+                        self.direction = "left"  # change direction
+                elif self.direction == "left":
+                    if x > 0.0:
+                        action = np.array([-1, 0])  # move left
+                    else:
+                        action = np.array([0, 1])  # move up
+                        self.direction = "right"  # change direction
+        elif self.status == "moving_to_start":
+            if np.allclose([x, y], start):
+                self.status = "moving_to_destination"
+            else:
+                if x < start[0]:
+                    action = np.array([1, 0])  # move right
+                elif x > start[0]:
+                    action = np.array([-1, 0])  # move left
+                elif y < start[1]:
+                    action = np.array([0, 1])  # move up
+                elif y > start[1]:
+                    action = np.array([0, -1])  # move down
+
+        return action
+    
     # Stop all threads for scripted obstacles
     def _stop_scripted_obstacles(self):
         self.scripted_obstacle_running = False

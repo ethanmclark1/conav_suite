@@ -5,17 +5,13 @@ from gymnasium import spaces
 from gymnasium.utils import seeding
 
 from pettingzoo import AECEnv
-from pettingzoo.mpe._mpe_utils.core import Agent
 from pettingzoo.utils import wrappers
 from pettingzoo.utils.agent_selector import agent_selector
 
 def make_env(raw_env):
     def env(**kwargs):
         env = raw_env(**kwargs)
-        if env.continuous_actions:
-            env = wrappers.ClipOutOfBoundsWrapper(env)
-        else:
-            env = wrappers.AssertOutOfBoundsWrapper(env)
+        env = wrappers.AssertOutOfBoundsWrapper(env)
         env = wrappers.OrderEnforcingWrapper(env)
         return env
 
@@ -35,7 +31,6 @@ class SimpleEnv(AECEnv):
         world,
         max_cycles,
         render_mode=None,
-        continuous_actions=False,
         local_ratio=None,
     ):
         super().__init__()
@@ -57,7 +52,6 @@ class SimpleEnv(AECEnv):
         self.max_cycles = max_cycles
         self.scenario = scenario
         self.world = world
-        self.continuous_actions = continuous_actions
         self.local_ratio = local_ratio
 
         self.scenario.reset_world(self.world, self.np_random)
@@ -66,6 +60,7 @@ class SimpleEnv(AECEnv):
         self._index_map = {agent.name: idx for idx, agent in enumerate(self.world.agents)}
 
         self._agent_selector = agent_selector(self.agents)
+        self._reset_called = False
 
         # set spaces
         self.action_spaces = dict()
@@ -74,19 +69,12 @@ class SimpleEnv(AECEnv):
         for agent in self.world.agents:
             if agent.movable:
                 space_dim = self.world.dim_p * 2 + 1
-            elif self.continuous_actions:
-                space_dim = 0
             else:
                 space_dim = 1
 
             obs_dim = len(self.scenario.observation(agent, self.world))
             state_dim += obs_dim
-            if self.continuous_actions:
-                self.action_spaces[agent.name] = spaces.Box(
-                    low=0, high=1, shape=(space_dim,)
-                )
-            else:
-                self.action_spaces[agent.name] = spaces.Discrete(space_dim)
+            self.action_spaces[agent.name] = spaces.Discrete(space_dim)
             self.observation_spaces[agent.name] = spaces.Box(
                 low=-np.float32(1),
                 high=+np.float32(1),
@@ -131,7 +119,7 @@ class SimpleEnv(AECEnv):
     def reset(self, seed=None, return_info=False, options=None):        
         if seed is not None:
             self.seed(seed=seed)
-            
+        
         problem_scenario = options['problem_name']
         self.scenario.reset_world(self.world, self.np_random, problem_scenario)
 
@@ -141,12 +129,28 @@ class SimpleEnv(AECEnv):
         self.terminations = {name: False for name in self.agents}
         self.truncations = {name: False for name in self.agents}
         self.infos = {name: {} for name in self.agents}
-
+        
+        self._reset_called = True
         self.agent_selection = self._agent_selector.reset()
         self.steps = 0
 
         self.current_actions = [None] * len(self.world.agents)
-
+        
+    def get_start_state(self):
+        if not self._reset_called:
+            raise Exception("Cannot get start state without calling reset() first")
+        
+        agent_pos = np.array([agent.state.p_pos for agent in self.world.agents])
+        goal_pos = np.array([(agent.goal_a.state.p_pos, agent.goal_b.state.p_pos) for agent in self.world.agents])
+        try:
+            [self.scenario.obstacle_locks[i].acquire() for i in range(len(self.scenario.obstacle_locks))]
+            obs_pos = np.array([obs.state.p_pos for obs in self.world.obstacles])
+        finally:
+            [self.scenario.obstacle_locks[i].release() for i in range(len(self.scenario.obstacle_locks))]
+        
+        entities = {'agents': agent_pos, 'goals': goal_pos, 'obstacles': obs_pos}
+        return entities
+        
     def _execute_world_step(self):
         # set action for each agent
         for i, agent in enumerate(self.world.agents):
@@ -154,12 +158,8 @@ class SimpleEnv(AECEnv):
             scenario_action = []
             if agent.movable:
                 mdim = self.world.dim_p * 2 + 1
-                if self.continuous_actions:
-                    scenario_action.append(action[0:mdim])
-                    action = action[mdim:]
-                else:
-                    scenario_action.append(action % mdim)
-                    action //= mdim
+                scenario_action.append(action % mdim)
+                action //= mdim
             self._set_action(scenario_action, agent, self.action_spaces[agent.name])
 
         self.world.step()
@@ -185,20 +185,14 @@ class SimpleEnv(AECEnv):
         if agent.movable:
             # physical action
             agent.action = np.zeros(self.world.dim_p)
-            if self.continuous_actions:
-                # Process continuous action as in OpenAI MPE
-                agent.action[0] += action[0][1] - action[0][2]
-                agent.action[1] += action[0][3] - action[0][4]
-            else:
-                # process discrete action
-                if action[0] == 1:
-                    agent.action[0] = -1.0
-                elif action[0] == 2:
-                    agent.action[0] = +1.0
-                elif action[0] == 3:
-                    agent.action[1] = -1.0
-                elif action[0] == 4:
-                    agent.action[1] = +1.0
+            if action[0] == 1:
+                agent.action[0] = -1.0
+            elif action[0] == 2:
+                agent.action[0] = +1.0
+            elif action[0] == 3:
+                agent.action[1] = -1.0
+            elif action[0] == 4:
+                agent.action[1] = +1.0
             sensitivity = 5.0
             agent.action *= sensitivity
             action = action[1:]
@@ -209,42 +203,46 @@ class SimpleEnv(AECEnv):
     def _episode_status(self):        
         dynamic_obs = [obs for obs in self.world.obstacles if obs.movable]
         static_obs = [obs for obs in self.world.obstacles if not obs.movable]
-    
-        goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal.size
+
+        goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal_a.size
         static_obs_threshold = self.world.agents[0].size + static_obs[0].size
-        
-        goal_dist = [np.linalg.norm(agent.state.p_pos - agent.goal.state.p_pos) for agent in self.world.agents]
+
+        goal_a_dist = [np.linalg.norm(agent.state.p_pos - agent.goal_a.state.p_pos) for agent in self.world.agents]
+        goal_b_dist = [np.linalg.norm(agent.state.p_pos - agent.goal_b.state.p_pos) for agent in self.world.agents]
         static_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in static_obs)
                            for agent in self.world.agents]
-        
+
         crossed_threshold_static = [dist <= static_obs_threshold for dist in static_obs_dist]
-        
+
+        for lock in self.scenario.obstacle_locks:
+            lock.acquire()
+
         try:
-            for i in range(len(dynamic_obs)):
-                self.scenario.obstacle_locks[i].acquire()
-                dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
-                                    for agent in self.world.agents] 
-                dynamic_obs_threshold = [agent.size + obs.size for agent, obs in zip(self.world.agents, dynamic_obs)]   
-            
+            dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
+                                for agent in self.world.agents] 
+            dynamic_obs_threshold = [agent.size + obs.size for agent, obs in zip(self.world.agents, dynamic_obs)]   
+
             crossed_threshold_dynamic = [dist <= threshold for dist, threshold in zip(dynamic_obs_dist, dynamic_obs_threshold)]
-                        
+
             truncations = [crossed_stat or crossed_dyn for crossed_stat, crossed_dyn in zip(crossed_threshold_static, crossed_threshold_dynamic)]
             truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
-            
+
             terminations = [False] * self.num_agents
-            for i, dist in enumerate(goal_dist):
+            for i, dist in enumerate(goal_a_dist):
                 if dist <= goal_dist_threshold:
-                    self.agents[i].reached_goal = True
-            
-            for i, agent in enumerate(self.world.agents):
-                if agent.reached_goal:
-                    dist_to_start = np.linalg.norm(agent.state.p_pos - agent.start_pos)
-                    start_dist_threshold = self.world.agents[0].size * 2
-                    if dist_to_start <= start_dist_threshold:
+                    self.world.agents[i].reached_goal = True
+
+            for i, dist in enumerate(goal_b_dist):
+                if self.world.agents[i].reached_goal:
+                    if dist <= goal_dist_threshold:
+                        self.agents[i].reached_safety = True
                         terminations[i] = True
         finally:
-            [self.scenario.obstacle_locks[i].release() for i, _ in enumerate(dynamic_obs)]
-            return {'terminations': terminations, 'truncations': truncations}
+            for lock in self.scenario.obstacle_locks:
+                lock.release()
+
+        return {'terminations': terminations, 'truncations': truncations}
+
 
     def step(self, action):
         if (

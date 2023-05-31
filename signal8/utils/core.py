@@ -64,15 +64,17 @@ class Agent(Entity):  # properties of agent entities
         # agents are movable by default
         self.movable = True
         # reached goal state
+        self.goal_a = None
         self.reached_goal = False
         # reached start state after reaching goal
+        self.goal_b = None
         self.returned_to_safety = False
-        # starting physical position
-        self.start_pos = None
         # state
         self.state = AgentState()
         # action
         self.action = None
+        # how far the agent can see
+        self.max_observable_dist = 0.30
 
 class World:  # multi-agent world
     def __init__(self):
