@@ -5,11 +5,13 @@ import logging
 import threading
 import numpy as np
 
-from gymnasium.utils import EzPickle
+from utils.npc import NPC
 from utils.scenario import BaseScenario
 from utils.core import Agent, Goal, Obstacle, World
 from utils.simple_env import SimpleEnv, make_env
 from utils.problems import get_problem, get_problem_list
+
+from gymnasium.utils import EzPickle
 
 
 class raw_env(SimpleEnv, EzPickle):
@@ -33,6 +35,7 @@ class Scenario(BaseScenario):
         self._add_logger()
         world.problem_scenarios = get_problem_list()
         
+        self.npc = []
         self.obstacle_locks = []
         self.scripted_obstacle_threads = []
         self.scripted_obstacle_running = False
@@ -128,13 +131,13 @@ class Scenario(BaseScenario):
         temp_static_obs_constr += leftover_entities
         temp_dynamic_obs_constr = list(copy.copy(world.dynamic_obstacle_constr))
         
-        self.status = 'moving_to_destination'
         num_dynamic_obs = len(temp_dynamic_obs_constr)        
         self._match_obstacles_to_problem(world, len(temp_static_obs_constr))
 
         for i, obstacle in enumerate(world.obstacles):
             if i < num_dynamic_obs:
                 self._reset_dynamic_obstacle(world, obstacle, np_random, temp_dynamic_obs_constr)
+                self.npc += [NPC()]
             else:
                 self._reset_static_obstacle(world, obstacle, np_random, temp_static_obs_constr)
     
@@ -148,17 +151,9 @@ class Scenario(BaseScenario):
                 t.start()
                 self.scripted_obstacle_threads.append(t)   
                 idx += 1
-    
-    """
-    Entity colors:
-    agent: yellow
-    goal_a: green
-    goal_b: blue
-    static obstacles: red
-    dynamic obstacles: greyish-black
-    """
+                
     def reset_world(self, world, np_random, problem_name=None):
-        self._stop_scripted_obstacles()
+        self.stop_scripted_obstacles()
         self._set_problem_scenario(world, np_random, problem_name)
         leftover_entities = self._reset_agents_and_goals(world, np_random)
         self._reset_obstacles(world, np_random, leftover_entities)
@@ -210,10 +205,8 @@ class Scenario(BaseScenario):
                 self.logger.debug(f'{obstacle.name} is now: {obstacle.size}, position: {obstacle.state.p_pos}')
                 time.sleep(0.1)
         
-    """
-    Disaster Response: Increase size of obstacle to resemble increasing size of fire/flood
-    Precision Farming: Move obstacle in a zamboni pattern to resemble the tractor
-    """
+    # disaster response: increase obstacle size to resemble increasing size of fire
+    # precision farming: move obstacle in a zig-zag pattern to resemble a tractor
     def _action_callback(self, obs, world):
         action = np.zeros(world.dim_p)
         
@@ -227,71 +220,14 @@ class Scenario(BaseScenario):
         elif problem_name == 'disaster_response_3':
             obs.size *= 1.050
         elif problem_name.startswith('precision_farming'):
+            obs_num = int(problem_name.split('_')[-1])
             scenario_num = int(problem_name.split('_')[-1])
-            action = self._get_scripted_action(obs, scenario_num)
+            action = self.npc[obs_num].get_scripted_action(obs, scenario_num)
 
         return action
-    
-    # TODO: Validate this is working correctly
-    def _get_scripted_action(self, obs, scenario_num):        
-        farming_scenarios = {
-            0: {"destination": (5.0, 5.0), "direction": "right"},
-            1: {"destination": (5.0, 5.0), "direction": "right"},
-            2: {"destination": (5.0, 5.0), "direction": "right"},
-            3: {"destination": (5.0, 5.0), "direction": "right"},
-        }
-        
-        start = obs.state.p_pos
-        destination = farming_scenarios[scenario_num]["destination"]
-        direction = farming_scenarios[scenario_num]["direction"]
-        x, y = start
 
-        if self.status == "moving_to_destination":
-            if np.allclose([x, y], destination):
-                self.status = "zigzagging"
-                self.direction = "right"
-            else:
-                if x < destination[0]:
-                    action = np.array([1, 0])  # move right
-                elif x > destination[0]:
-                    action = np.array([-1, 0])  # move left
-                elif y < destination[1]:
-                    action = np.array([0, 1])  # move up
-                elif y > destination[1]:
-                    action = np.array([0, -1])  # move down
-        elif self.status == "zigzagging":
-            if y >= 1.0 and x <= 0.0:
-                self.status = "moving_to_start"
-            else:
-                if self.direction == "right":
-                    if x < 1.0:
-                        action = np.array([1, 0])  # move right
-                    else:
-                        action = np.array([0, 1])  # move up
-                        self.direction = "left"  # change direction
-                elif self.direction == "left":
-                    if x > 0.0:
-                        action = np.array([-1, 0])  # move left
-                    else:
-                        action = np.array([0, 1])  # move up
-                        self.direction = "right"  # change direction
-        elif self.status == "moving_to_start":
-            if np.allclose([x, y], start):
-                self.status = "moving_to_destination"
-            else:
-                if x < start[0]:
-                    action = np.array([1, 0])  # move right
-                elif x > start[0]:
-                    action = np.array([-1, 0])  # move left
-                elif y < start[1]:
-                    action = np.array([0, 1])  # move up
-                elif y > start[1]:
-                    action = np.array([0, -1])  # move down
-
-        return action
-    
     # Stop all threads for scripted obstacles
-    def _stop_scripted_obstacles(self):
+    def stop_scripted_obstacles(self):
         self.scripted_obstacle_running = False
         for t in self.scripted_obstacle_threads:
             t.join()

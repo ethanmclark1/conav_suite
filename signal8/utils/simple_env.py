@@ -328,3 +328,4 @@ class SimpleEnv(AECEnv):
             pygame.event.pump()
             pygame.display.quit()
             self.renderOn = False
+        self.unwrapped.scenario.stop_scripted_obstacles()
