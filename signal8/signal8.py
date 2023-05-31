@@ -87,7 +87,8 @@ class Scenario(BaseScenario):
             agent.goal_a.state.p_vel = np.zeros(world.dim_p)
             goal_constr = random.choice(temp_goal_constr)
             agent.goal_a.state.p_pos = np_random.uniform(*zip(*goal_constr))
-            temp_goal_constr.remove(goal_constr)
+            if world.problem_name.startswith('precision_farming'):
+                temp_goal_constr.remove(goal_constr)
             
             agent.goal_b = world.goals[len(world.goals) - 1 - i]
             agent.goal_b.color = np.array([0.85, 0.90, 0.99])

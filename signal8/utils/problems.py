@@ -1,4 +1,3 @@
-# TODO: Add more goal destinations for disaster response problems
 problems = {
     'disaster_response_0': {
         'start': (((-0.05, 0.05), (-1, -0.90)),),
