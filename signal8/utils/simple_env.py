@@ -14,7 +14,6 @@ def make_env(raw_env):
         env = wrappers.AssertOutOfBoundsWrapper(env)
         env = wrappers.OrderEnforcingWrapper(env)
         return env
-
     return env
 
 
@@ -44,9 +43,8 @@ class SimpleEnv(AECEnv):
         self.max_size = 1
         self.game_font = pygame.freetype.Font(None, 20)
 
-        # Set up the drawing window
-
         self.renderOn = False
+        self._reset_called = False
         self.seed()
 
         self.max_cycles = max_cycles
@@ -60,7 +58,6 @@ class SimpleEnv(AECEnv):
         self._index_map = {agent.name: idx for idx, agent in enumerate(self.world.agents)}
 
         self._agent_selector = agent_selector(self.agents)
-        self._reset_called = False
 
         # set spaces
         self.action_spaces = dict()
@@ -197,7 +194,7 @@ class SimpleEnv(AECEnv):
                 agent.action[1] = -1.0
             elif action[0] == 4:
                 agent.action[1] = +1.0
-            sensitivity = 5.0
+            sensitivity = 2.0
             agent.action *= sensitivity
             action = action[1:]
         # make sure we used all elements of action

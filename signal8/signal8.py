@@ -64,8 +64,6 @@ class Scenario(BaseScenario):
     def _set_problem_scenario(self, world, np_random, problem_name):
         if problem_name is None:
             problem_name = np_random.choice(world.problem_scenarios)
-        # TODO: Remove this line
-        problem_name = 'precision_farming_0'
         problem = get_problem(problem_name)
         world.problem_name = problem_name
         world.start_constr = problem['start']
@@ -141,7 +139,7 @@ class Scenario(BaseScenario):
         for i, obstacle in enumerate(world.obstacles):
             if i < num_dynamic_obs:
                 self._reset_dynamic_obstacle(world, obstacle, np_random, temp_dynamic_obs_constr)
-                self.npc += [NPC()]
+                self.npc += [NPC(obstacle.state.p_pos)]
             else:
                 self._reset_static_obstacle(world, obstacle, np_random, temp_static_obs_constr)
     
@@ -157,6 +155,7 @@ class Scenario(BaseScenario):
                 idx += 1
                 
     def reset_world(self, world, np_random, problem_name=None):
+        self.npc.clear()
         self.stop_scripted_obstacles()
         self._set_problem_scenario(world, np_random, problem_name)
         leftover_entities = self._reset_agents_and_goals(world, np_random)
@@ -199,30 +198,28 @@ class Scenario(BaseScenario):
             
     # Run a thread for each scripted obstacle
     def run_scripted_obstacle(self, world, obstacle, obstacle_idx):
-        sensitivity = 5.0
+        sensitivity = 2.0
         while self.scripted_obstacle_running:
             with self.obstacle_locks[obstacle_idx]:
-                self.logger.debug(f'{obstacle.name} started at size: {obstacle.size}, position: {obstacle.state.p_pos}')
+                self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
                 action = self._action_callback(obstacle, world)
                 obstacle.action = action * sensitivity
                 obstacle.move()
-                self.logger.debug(f'{obstacle.name} is now: {obstacle.size}, position: {obstacle.state.p_pos}')
-                time.sleep(0.1)
+                time.sleep(0.25)
         
     # disaster response: increase obstacle size to resemble increasing size of fire
     # precision farming: move obstacle in a zig-zag pattern to resemble a tractor
     def _action_callback(self, obs, world):
         action = np.zeros(world.dim_p)
-        
         problem_name = world.problem_name
         if problem_name == 'disaster_response_0':
-            obs.size *= 1.125
+            obs.size += 0.005
         elif problem_name == 'disaster_response_1':
-            obs.size *= 1.100
+            obs.size += 0.0075
         elif problem_name == 'disaster_response_2':
-            obs.size *= 1.150
+            obs.size += 0.01
         elif problem_name == 'disaster_response_3':
-            obs.size *= 1.050
+            obs.size += 0.0125
         elif problem_name.startswith('precision_farming'):
             obs_num = int(problem_name.split('_')[-1])
             scenario_num = int(problem_name.split('_')[-1])
