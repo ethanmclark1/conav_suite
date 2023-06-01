@@ -5,6 +5,7 @@ import logging
 import threading
 import numpy as np
 
+# TODO: Add . in front of imports
 from utils.npc import NPC
 from utils.scenario import BaseScenario
 from utils.core import Agent, Goal, Obstacle, World

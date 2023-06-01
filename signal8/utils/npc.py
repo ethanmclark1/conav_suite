@@ -2,14 +2,13 @@ import numpy as np
 
 class NPC:
     def __init__(self):
-        self.direction = None
-        self.y_direction = 1
+        self.direction = [None, None]
         self.status = 'moving_to_destination'
         self.farming_scenarios = {
-            0: {'start': (0.9, -0.9), 'destination': (-0.8, -0.8), 'direction': 'left', 'bounds': [(-1, -0.4), (-1, 1)]},
-            1: {'start': (0.9, -0.9), 'destination': (0.75, 0.75), 'direction': 'left', 'bounds': [(-1, 1), (0.4, 1)]},
-            2: {'start': (-0.9, 0.2), 'destination': (-0.1875, -0.90), 'direction': 'right', 'bounds': [(-0.25, 0.25), (-1, 1)]},
-            3: {'start': (-0.4, 0.9), 'destination': (-0.75, -0.80), 'direction': 'right', 'bounds': [(-1, 1), (-1, -0.4)]},
+            0: {'start': (0.8, -0.8), 'destination': (-0.9, -0.9), 'direction': [-1, 1], 'bounds': [(-1, -0.4), (-1, 1)]},
+            1: {'start': (0.8, -0.8), 'destination': (0.9, 0.9), 'direction': [-1, -1], 'bounds': [(-1, 1), (0.4, 1)]},
+            2: {'start': (-0.8, 0.2), 'destination': (0, 1), 'direction': [1, -1], 'bounds': [(-0.25, 0.25), (-1, 1)]},
+            3: {'start': (-0.4, 0.9), 'destination': (-0.75, -0.90), 'direction': [1, 1], 'bounds': [(-1, 1), (-1, -0.4)]},
         }
     
     def get_scripted_action(self, obs, scenario_num):
@@ -28,7 +27,7 @@ class NPC:
             else:
                 action = self._move_towards_point(x, y, destination)
         elif self.status == 'zigzagging':
-            if self.y_direction == 1 and y > bounds[1][1] or self.y_direction == -1 and y < bounds[1][0]:
+            if self.direction[1] == 1 and y > bounds[1][1] or self.direction[1] == -1 and y < bounds[1][0]:
                 self.status = 'moving_to_start'
             else:
                 action = self._zigzag(x, y, bounds)
@@ -41,8 +40,8 @@ class NPC:
         return action
     
     def _move_towards_point(self, x, y, point):
-            direction = np.array(point) - np.array([x, y])
-            direction_norm = direction / np.linalg.norm(direction)
+            x_direction = np.array(point) - np.array([x, y])
+            direction_norm = x_direction / np.linalg.norm(x_direction)
             return np.round(direction_norm).astype(int)
 
     def _within_bounds(self, x, y, bounds):
@@ -50,15 +49,16 @@ class NPC:
         return x_bounds[0] <= x <= x_bounds[1] and y_bounds[0] <= y <= y_bounds[1]
 
     def _zigzag(self, x, y, bounds):
-            if self.direction == 'right':
+            if self.direction[0] == 1:
                 if x < bounds[0][1]:
                     return np.array([1, 0])
                 else:
-                    self.direction = 'left' 
-                    return np.array([0, self.y_direction])
-            elif self.direction == 'left':
+                    self.direction[0] = -1 
+                    return np.array([0, self.direction[1]])
+            elif self.direction[0] == -1:
                 if x > bounds[0][0]:
                     return np.array([-1, 0])
                 else:
-                    self.direction = 'right'
-                    return np.array([0, self.y_direction])
+                    self.direction[0] = 1
+                    return np.array([0, self.direction[1]])
+                
