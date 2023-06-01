@@ -22,6 +22,7 @@ import Signal8
 
 env = Signal8.env(dynamic_obstacles=True)
 env.reset(options={"problem_name": "v_cluster"}))
+env.close()
 ```
 
 ## List of Problem Scenarios

@@ -5,12 +5,11 @@ import logging
 import threading
 import numpy as np
 
-# TODO: Add . in front of imports
-from utils.npc import NPC
-from utils.scenario import BaseScenario
-from utils.core import Agent, Goal, Obstacle, World
-from utils.simple_env import SimpleEnv, make_env
-from utils.problems import get_problem, get_problem_list
+from .utils.npc import NPC
+from .utils.scenario import BaseScenario
+from .utils.core import Agent, Goal, Obstacle, World
+from .utils.simple_env import SimpleEnv, make_env
+from .utils.problems import get_problem, get_problem_list
 
 from gymnasium.utils import EzPickle
 
