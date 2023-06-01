@@ -15,7 +15,7 @@ from gymnasium.utils import EzPickle
 
 
 class raw_env(SimpleEnv, EzPickle):
-    def __init__(self, num_agents=1, render_mode="human"):
+    def __init__(self, num_agents=1, render_mode=None):
         
         scenario = Scenario()
         world = scenario.make_world(num_agents)
@@ -45,6 +45,8 @@ class Scenario(BaseScenario):
             agent.name = f"agent_{i}"
             agent.collide = True
 
+        # Agents has two goals (i.e., actual goal and start position)
+        # This is to ensure agent returns safely to start position
         world.goals = [Goal() for _ in range(len(world.agents*2))]
         for i, goal in enumerate(world.goals):
             goal.name = f"goal_{i}"
@@ -161,7 +163,7 @@ class Scenario(BaseScenario):
         if problem_name is not None:
             self._start_scripted_obstacles(world)
     
-    # TODO: Figure out a reward function
+    # Reward given by agents to agents for reaching their respective goals
     def reward(self, agent, world):
         return 0
     

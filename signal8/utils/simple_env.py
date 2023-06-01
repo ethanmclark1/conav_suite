@@ -124,6 +124,8 @@ class SimpleEnv(AECEnv):
         self.scenario.reset_world(self.world, self.np_random, problem_scenario)
 
         self.agents = self.possible_agents[:]
+        # PettingZoo Gymansium requires rewards to be set
+        # even if they are not used
         self.rewards = {name: 0.0 for name in self.agents}
         self._cumulative_rewards = {name: 0.0 for name in self.agents}
         self.terminations = {name: False for name in self.agents}
@@ -160,10 +162,12 @@ class SimpleEnv(AECEnv):
                 mdim = self.world.dim_p * 2 + 1
                 scenario_action.append(action % mdim)
                 action //= mdim
-            self._set_action(scenario_action, agent, self.action_spaces[agent.name])
+            self._set_action(scenario_action, agent)
 
         self.world.step()
 
+        # PettingZoo Gymansium requires rewards to be set
+        # even if they are not used
         global_reward = 0.0
         if self.local_ratio is not None:
             global_reward = float(self.scenario.global_reward(self.world))
@@ -181,7 +185,7 @@ class SimpleEnv(AECEnv):
             self.rewards[agent.name] = reward
 
     # set env action for a particular agent
-    def _set_action(self, action, agent, action_space, time=None):
+    def _set_action(self, action, agent):
         if agent.movable:
             # physical action
             agent.action = np.zeros(self.world.dim_p)
