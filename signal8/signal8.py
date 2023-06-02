@@ -5,6 +5,7 @@ import logging
 import threading
 import numpy as np
 
+
 from .utils.npc import NPC
 from .utils.scenario import BaseScenario
 from .utils.core import Agent, Goal, Obstacle, World
@@ -16,6 +17,9 @@ from gymnasium.utils import EzPickle
 
 class raw_env(SimpleEnv, EzPickle):
     def __init__(self, num_agents=1, render_mode=None):
+        
+        if num_agents > 2:
+            raise ValueError("Signal8 currently can only support up to 2 agents.")
         
         scenario = Scenario()
         world = scenario.make_world(num_agents)
@@ -75,7 +79,7 @@ class Scenario(BaseScenario):
     for the precision farming case (i.e., crop that wasn't selected as goal becomes an obstacle)
     """
     def _reset_agents_and_goals(self, world, np_random):
-        temp_goal_constr = list(copy.copy(world.goal_constr))
+        temp_goal_constr = copy.copy(world.goal_constr)
         for i, agent in enumerate(world.agents):
             agent.color = np.array([1, 0.95, 0.8])
             agent.state.p_vel = np.zeros(world.dim_p)
@@ -87,8 +91,7 @@ class Scenario(BaseScenario):
             agent.goal_a.state.p_vel = np.zeros(world.dim_p)
             goal_constr = random.choice(temp_goal_constr)
             agent.goal_a.state.p_pos = np_random.uniform(*zip(*goal_constr))
-            if world.problem_name.startswith('precision_farming'):
-                temp_goal_constr.remove(goal_constr)
+            temp_goal_constr.remove(goal_constr)
             
             agent.goal_b = world.goals[len(world.goals) - 1 - i]
             agent.goal_b.color = np.array([0.85, 0.90, 0.99])
@@ -128,9 +131,10 @@ class Scenario(BaseScenario):
     
     # Reset position of obstacles
     def _reset_obstacles(self, world, np_random, leftover_entities):
-        temp_static_obs_constr = list(copy.copy(world.static_obstacle_constr))
-        temp_static_obs_constr += leftover_entities
-        temp_dynamic_obs_constr = list(copy.copy(world.dynamic_obstacle_constr))
+        temp_static_obs_constr = copy.copy(world.static_obstacle_constr)
+        if world.problem_name.startswith('precision_farming'):
+            temp_static_obs_constr += leftover_entities
+        temp_dynamic_obs_constr = copy.copy(world.dynamic_obstacle_constr)
         
         num_dynamic_obs = len(temp_dynamic_obs_constr)        
         self._match_obstacles_to_problem(world, len(temp_static_obs_constr))
@@ -159,8 +163,7 @@ class Scenario(BaseScenario):
         self._set_problem_scenario(world, np_random, problem_name)
         leftover_entities = self._reset_agents_and_goals(world, np_random)
         self._reset_obstacles(world, np_random, leftover_entities)
-        if problem_name is not None:
-            self._start_scripted_obstacles(world)
+        self._start_scripted_obstacles(world)
     
     # Reward given by agents to agents for reaching their respective goals
     def reward(self, agent, world):
