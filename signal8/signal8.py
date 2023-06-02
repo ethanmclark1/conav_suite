@@ -5,23 +5,26 @@ import logging
 import threading
 import numpy as np
 
-from .utils.npc import NPC
-from .utils.scenario import BaseScenario
-from .utils.core import Agent, Goal, Obstacle, World
-from .utils.simple_env import SimpleEnv, make_env
-from .utils.problems import get_problem, get_problem_list
+from utils.npc import NPC
+from utils.scenario import BaseScenario
+from utils.simple_env import SimpleEnv, make_env
+from utils.core import Agent, Goal, Obstacle, World
+from utils.problems import get_problem_config
 
 from gymnasium.utils import EzPickle
 
 
 class raw_env(SimpleEnv, EzPickle):
-    def __init__(self, num_agents=1, render_mode=None):
+    def __init__(self, problem_type, num_agents=1, render_mode=None):
+        
+        if problem_type not in {'disaster_response', 'precision_farming'}:
+            raise ValueError("Signal8 only supports 'disaster_response' and 'precision_farming' problem types.")
         
         if num_agents > 2:
             raise ValueError("Signal8 currently can only support up to 2 agents.")
         
         scenario = Scenario()
-        world = scenario.make_world(num_agents)
+        world = scenario.make_world(problem_type, num_agents)
         
         super().__init__(
             scenario=scenario, 
@@ -33,10 +36,10 @@ class raw_env(SimpleEnv, EzPickle):
 env = make_env(raw_env)
 
 class Scenario(BaseScenario):
-    def make_world(self, num_agents):
+    def make_world(self, problem_type, num_agents):
         world = World()
         self._add_logger()
-        world.problem_scenarios = get_problem_list()
+        world.problem_type = problem_type
         
         self.npc = []
         self.obstacle_locks = []
@@ -63,11 +66,8 @@ class Scenario(BaseScenario):
         return world
     
     # Get constraints on entities given the problem name
-    def _set_problem_scenario(self, world, np_random, problem_name):
-        if problem_name is None:
-            problem_name = np_random.choice(world.problem_scenarios)
-        problem = get_problem(problem_name)
-        world.problem_name = problem_name
+    def _set_problem_scenario(self, world, np_random, scenario_num):
+        problem = get_problem_config(world.problem_type, scenario_num, np_random)
         world.start_constr = problem['start']
         world.goal_constr = problem['goal']
         world.static_obstacle_constr = problem['static_obs']

@@ -95,7 +95,7 @@ class World:  # multi-agent world
         self.contact_margin = 1e-3
         # problem scenarios
         self.problem_scenarios = []
-        self.problem_name = None
+        self.problem_type = None
         self.start_constr = None
         self.goal_constr = None
         self.static_obstacle_constr = None

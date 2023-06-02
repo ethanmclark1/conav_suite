@@ -52,7 +52,6 @@ class SimpleEnv(AECEnv):
         self.world = world
         self.local_ratio = local_ratio
 
-        self.scenario.reset_world(self.world, self.np_random)
         self.agents = [agent.name for agent in self.world.agents]
         self.possible_agents = self.agents[:]
         self._index_map = {agent.name: idx for idx, agent in enumerate(self.world.agents)}
@@ -62,15 +61,11 @@ class SimpleEnv(AECEnv):
         # set spaces
         self.action_spaces = dict()
         self.observation_spaces = dict()
-        state_dim = 0
+        # TODO: Validate these values
+        # Add additional 2 for each additional agent
+        obs_dim = 14 if world.problem_type == 'disaster_response' else 24
         for agent in self.world.agents:
-            if agent.movable:
-                space_dim = self.world.dim_p * 2 + 1
-            else:
-                space_dim = 1
-
-            obs_dim = len(self.scenario.observation(agent, self.world))
-            state_dim += obs_dim
+            space_dim = self.world.dim_p * 2 + 1
             self.action_spaces[agent.name] = spaces.Discrete(space_dim)
             self.observation_spaces[agent.name] = spaces.Box(
                 low=-np.float32(1),
@@ -78,16 +73,8 @@ class SimpleEnv(AECEnv):
                 shape=(obs_dim,),
                 dtype=np.float32,
             )
-
-        self.state_space = spaces.Box(
-            low=-np.float32(1),
-            high=+np.float32(1),
-            shape=(state_dim,),
-            dtype=np.float32,
-        )
-
+            
         self.steps = 0
-
         self.current_actions = [None] * self.num_agents
 
     def observation_space(self, agent):
@@ -117,8 +104,13 @@ class SimpleEnv(AECEnv):
         if seed is not None:
             self.seed(seed=seed)
         
-        problem_scenario = options['problem_name']
-        self.scenario.reset_world(self.world, self.np_random, problem_scenario)
+        # TODO: Improve functionality of this 
+        try:
+            scenario_num = options['scenario_num']
+        except:
+            raise Exception("Must provide a scenario number [0-3] to reset the environment with")
+        
+        self.scenario.reset_world(self.world, self.np_random, scenario_num)
 
         self.agents = self.possible_agents[:]
         # PettingZoo Gymansium requires rewards to be set
