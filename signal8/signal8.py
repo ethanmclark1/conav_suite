@@ -5,7 +5,6 @@ import logging
 import threading
 import numpy as np
 
-
 from .utils.npc import NPC
 from .utils.scenario import BaseScenario
 from .utils.core import Agent, Goal, Obstacle, World
@@ -223,7 +222,7 @@ class Scenario(BaseScenario):
         elif problem_name == 'disaster_response_3':
             obs.size += 0.0125
         elif problem_name.startswith('precision_farming'):
-            obs_num = int(problem_name.split('_')[-1])
+            obs_num = int(obs.name.split('_')[-1])
             scenario_num = int(problem_name.split('_')[-1])
             action = self.npc[obs_num].get_scripted_action(obs, scenario_num)
 
