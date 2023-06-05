@@ -5,17 +5,17 @@ class NPC:
         self.start = start_pos
         self.direction = [None, None]
         self.status = 'moving_to_destination'
-        self.farming_scenarios = {
+        self.farming_instances = {
             0: {'destination': (-0.9, -0.9), 'direction': [-1, 1], 'bounds': [(-1, -0.4), (-1, 1)]},
             1: {'destination': (0.9, 0.9), 'direction': [-1, -1], 'bounds': [(-1, 1), (0.4, 1)]},
             2: {'destination': (0, 1), 'direction': [1, -1], 'bounds': [(-0.25, 0.25), (-1, 1)]},
             3: {'destination': (-0.75, -0.90), 'direction': [1, 1], 'bounds': [(-1, 1), (-1, -0.4)]},
         }
     
-    def get_scripted_action(self, obs, scenario_num):
-        destination = self.farming_scenarios[scenario_num]['destination']
-        direction = self.farming_scenarios[scenario_num]['direction']
-        bounds = self.farming_scenarios[scenario_num]['bounds']
+    def get_scripted_action(self, obs, instance_num):
+        destination = self.farming_instances[instance_num]['destination']
+        direction = self.farming_instances[instance_num]['direction']
+        bounds = self.farming_instances[instance_num]['bounds']
         
         action = np.array([0, 0])
         x, y, = obs.state.p_pos

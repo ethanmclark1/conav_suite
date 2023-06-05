@@ -1,6 +1,6 @@
 problems = {
     'disaster_response': {
-        'scenario_0': {
+        'instance_0': {
             'start': [((-0.05, 0.05), (-1, -0.90))],
             'goal': [
                 ((-0.85, -0.75), (0.90, 1)),
@@ -13,7 +13,7 @@ problems = {
                 ],
             'dynamic_obs': [((0.95, 1), (0.95, 1))]
         },
-        'scenario_1': {
+        'instance_1': {
             'start': [((-0.05, 0.05), (-1, -0.90))],
             'goal': [
                 ((0.90, 1), (-0.05, 0.05)),
@@ -26,7 +26,7 @@ problems = {
                 ],
             'dynamic_obs': [((-0.6, -0.45), (0.95, 1))]
         },
-        'scenario_2': {
+        'instance_2': {
             'start': [((-0.05, 0.05), (-1, -0.90))],
             'goal': [
                 ((-0.05, 0.05), (0, 0.10)),
@@ -39,7 +39,7 @@ problems = {
                 ],
             'dynamic_obs': [((-0.15, 0), (0.90, 1))]
         },
-        'scenario_3': {
+        'instance_3': {
             'start': [((-0.05, 0.05), (-1, -0.90))],
             'goal': [
                 ((0.90, 1), (0.90, 1)),
@@ -54,7 +54,7 @@ problems = {
         }
     },
     'precision_farming': {
-        'scenario_0': {
+        'instance_0': {
             'start': [((0.80, 1), (0.80, 1))],
             'goal': [
                 ((-0.95, -0.70), (0.525, 0.90)), 
@@ -71,7 +71,7 @@ problems = {
                 ],
             'dynamic_obs': [((0.80, 1), (-1, -0.80))]
         },
-        'scenario_1': {
+        'instance_1': {
             'start': [((-1, -0.80), (-1, -0.80))],
             'goal': [
                 ((-0.95, -0.575), (0.65, 0.90)), 
@@ -88,7 +88,7 @@ problems = {
                 ],
             'dynamic_obs': [((0.80, 1), (-1, -0.80))]
         },
-        'scenario_2': {
+        'instance_2': {
             'start': [((-1, -0.80), (-0.20, 0))],
             'goal': [
                 ((-0.1875, 0.1875), (0.65, 0.90)), 
@@ -105,7 +105,7 @@ problems = {
                 ],
             'dynamic_obs': [((-1, -0.80), (0, 0.20))]    
         },
-        'scenario_3': {
+        'instance_3': {
             'start': [((-0.10, 0.10), (0.80, 1))],
             'goal': [
                 ((-0.80, -0.425), (-0.20, 0)), 
@@ -125,9 +125,9 @@ problems = {
     },
 }
 
-def get_problem_config(problem_type, scenario_num, np_random):
-    if scenario_num is None:
-        scenario_num = np_random.randint(len(problems[problem_type]))
-    scenario_name = f'scenario_{scenario_num}'
-    problem = problems[problem_type][scenario_name]
-    return problem
+def get_problem_instance(problem_type, instance_num, np_random):
+    if instance_num is None:
+        instance_num = np_random.randint(len(problems[problem_type]))
+    instance_name = f'instance_{instance_num}'
+    instance = problems[problem_type][instance_name]
+    return instance_name, instance

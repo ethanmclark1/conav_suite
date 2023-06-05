@@ -102,14 +102,14 @@ class SimpleEnv(AECEnv):
         if seed is not None:
             self.seed(seed=seed)
             
-        if 'scenario_num' not in options:
-            raise ValueError("Must provide a scenario_num to reset the environment with.")
+        if 'instance_num' not in options:
+            raise ValueError("Must provide an instance_num to reset the environment with.")
         
-        scenario_num = options['scenario_num']
-        if not 0 <= scenario_num <= 3:
-            raise ValueError("scenario_num must be between 0 and 3.")
+        instance_num = options['instance_num']
+        if not 0 <= instance_num <= 3:
+            raise ValueError("instance_num must be between 0 and 3.")
         
-        self.scenario.reset_world(self.world, self.np_random, scenario_num)
+        self.scenario.reset_world(self.world, self.np_random, instance_num)
 
         self.agents = self.possible_agents[:]
         # PettingZoo Gymansium requires rewards to be set

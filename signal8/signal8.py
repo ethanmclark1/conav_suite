@@ -5,11 +5,12 @@ import logging
 import threading
 import numpy as np
 
-from .utils.npc import NPC
-from .utils.scenario import BaseScenario
-from .utils.simple_env import SimpleEnv, make_env
-from .utils.core import Agent, Goal, Obstacle, World
-from .utils.problems import get_problem_config
+# TODO
+from utils.npc import NPC
+from utils.scenario import BaseScenario
+from utils.simple_env import SimpleEnv, make_env
+from utils.core import Agent, Goal, Obstacle, World
+from utils.problems import get_problem_instance
 
 from gymnasium.utils import EzPickle
 
@@ -58,20 +59,21 @@ class Scenario(BaseScenario):
             goal.name = f"goal_{i}"
             goal.collide = False
         
-        # Minimum number of obstacles in a problem scenario 
+        # Minimum number of obstacles in a problem instance 
         world.obstacles = [Obstacle() for _ in range(4)]
         for i, obstacle in enumerate(world.obstacles):
             obstacle.name = f"obs_{i}"
                 
         return world
     
-    # Get constraints on entities given the problem name
-    def _set_problem_scenario(self, world, np_random, scenario_num):
-        problem = get_problem_config(world.problem_type, scenario_num, np_random)
-        world.start_constr = problem['start']
-        world.goal_constr = problem['goal']
-        world.static_obstacle_constr = problem['static_obs']
-        world.dynamic_obstacle_constr = problem['dynamic_obs']
+    # Get constraints on entities given the problem instance name
+    def _set_problem_instance(self, world, np_random, instance_num):
+        instance_name, instance = get_problem_instance(world.problem_type, instance_num, np_random)
+        world.problem_instance = instance_name
+        world.start_constr = instance['start']
+        world.goal_constr = instance['goal']
+        world.static_obstacle_constr = instance['static_obs']
+        world.dynamic_obstacle_constr = instance['dynamic_obs']
     
     """
     Returns goal constraints that haven't been selected to be used as an obstacle
@@ -118,8 +120,8 @@ class Scenario(BaseScenario):
         obstacle.state.p_pos = np_random.uniform(*zip(*static_obs_constr))  
         temp_static_obs_constr.remove(static_obs_constr)
     
-    # Add or remove obstacles to match the number of obstacles in problem scenario
-    def _match_obstacles_to_problem(self, world, num_static):
+    # Add or remove obstacles to match the number of obstacles in problem instance
+    def _match_obstacles_to_instance(self, world, num_static):
         num_total_obstacles = num_static + len(world.dynamic_obstacle_constr)
         if len(world.obstacles) > num_total_obstacles:
             world.obstacles = world.obstacles[:num_total_obstacles]
@@ -136,7 +138,7 @@ class Scenario(BaseScenario):
         temp_dynamic_obs_constr = copy.copy(world.dynamic_obstacle_constr)
         
         num_dynamic_obs = len(temp_dynamic_obs_constr)        
-        self._match_obstacles_to_problem(world, len(temp_static_obs_constr))
+        self._match_obstacles_to_instance(world, len(temp_static_obs_constr))
 
         for i, obstacle in enumerate(world.obstacles):
             if i < num_dynamic_obs:
@@ -159,7 +161,7 @@ class Scenario(BaseScenario):
     def reset_world(self, world, np_random, problem_name=None):
         self.npc.clear()
         self.stop_scripted_obstacles()
-        self._set_problem_scenario(world, np_random, problem_name)
+        self._set_problem_instance(world, np_random, problem_name)
         leftover_entities = self._reset_agents_and_goals(world, np_random)
         self._reset_obstacles(world, np_random, leftover_entities)
         self._start_scripted_obstacles(world)
@@ -212,19 +214,20 @@ class Scenario(BaseScenario):
     # precision farming: move obstacle in a zig-zag pattern to resemble a tractor
     def _action_callback(self, obs, world):
         action = np.zeros(world.dim_p)
-        problem_name = world.problem_name
-        if problem_name == 'disaster_response_0':
-            obs.size += 0.005
-        elif problem_name == 'disaster_response_1':
-            obs.size += 0.0075
-        elif problem_name == 'disaster_response_2':
-            obs.size += 0.01
-        elif problem_name == 'disaster_response_3':
-            obs.size += 0.0125
-        elif problem_name.startswith('precision_farming'):
+        instance = world.problem_instance
+        if world.problem_type == 'disaster_response':
+            if instance == 'instance_0':
+                obs.size += 0.005
+            elif instance == 'instance_1':
+                obs.size += 0.0075
+            elif instance == 'instance_2':
+                obs.size += 0.01
+            elif instance == 'instance_3':
+                obs.size += 0.0125
+        else:
             obs_num = int(obs.name.split('_')[-1])
-            scenario_num = int(problem_name.split('_')[-1])
-            action = self.npc[obs_num].get_scripted_action(obs, scenario_num)
+            instance_num = int(instance.split('_')[-1])
+            action = self.npc[obs_num].get_scripted_action(obs, instance_num)
 
         return action
 

@@ -93,9 +93,8 @@ class World:  # multi-agent world
         # contact response parameters
         self.contact_force = 1e2
         self.contact_margin = 1e-3
-        # problem scenarios
-        self.problem_scenarios = []
         self.problem_type = None
+        self.problem_instance = None
         self.start_constr = None
         self.goal_constr = None
         self.static_obstacle_constr = None
