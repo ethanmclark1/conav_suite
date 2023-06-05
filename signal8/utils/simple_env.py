@@ -61,8 +61,6 @@ class SimpleEnv(AECEnv):
         # set spaces
         self.action_spaces = dict()
         self.observation_spaces = dict()
-        # TODO: Validate these values
-        # Add additional 2 for each additional agent
         obs_dim = 14 if world.problem_type == 'disaster_response' else 24
         for agent in self.world.agents:
             space_dim = self.world.dim_p * 2 + 1
@@ -103,12 +101,13 @@ class SimpleEnv(AECEnv):
     def reset(self, seed=None, return_info=False, options=None):        
         if seed is not None:
             self.seed(seed=seed)
+            
+        if 'scenario_num' not in options:
+            raise ValueError("Must provide a scenario_num to reset the environment with.")
         
-        # TODO: Improve functionality of this 
-        try:
-            scenario_num = options['scenario_num']
-        except:
-            raise Exception("Must provide a scenario number [0-3] to reset the environment with")
+        scenario_num = options['scenario_num']
+        if not 0 <= scenario_num <= 3:
+            raise ValueError("scenario_num must be between 0 and 3.")
         
         self.scenario.reset_world(self.world, self.np_random, scenario_num)
 

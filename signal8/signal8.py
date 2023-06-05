@@ -5,11 +5,11 @@ import logging
 import threading
 import numpy as np
 
-from utils.npc import NPC
-from utils.scenario import BaseScenario
-from utils.simple_env import SimpleEnv, make_env
-from utils.core import Agent, Goal, Obstacle, World
-from utils.problems import get_problem_config
+from .utils.npc import NPC
+from .utils.scenario import BaseScenario
+from .utils.simple_env import SimpleEnv, make_env
+from .utils.core import Agent, Goal, Obstacle, World
+from .utils.problems import get_problem_config
 
 from gymnasium.utils import EzPickle
 
@@ -131,7 +131,7 @@ class Scenario(BaseScenario):
     # Reset position of obstacles
     def _reset_obstacles(self, world, np_random, leftover_entities):
         temp_static_obs_constr = copy.copy(world.static_obstacle_constr)
-        if world.problem_name.startswith('precision_farming'):
+        if world.problem_type.startswith('precision_farming'):
             temp_static_obs_constr += leftover_entities
         temp_dynamic_obs_constr = copy.copy(world.dynamic_obstacle_constr)
         
