@@ -39,14 +39,14 @@ env.close()
 
 |   Problem Type   | Instance Name |                 Visualization                 |
 | :---------------: | :------------: | :--------------------------------------------: |
-| Disaster Response | ``instance 0`` | ![1686020763939](image/README/1686020763939.png) |
-| Disaster Response | ``instance 1`` | ![1686020779535](image/README/1686020779535.png) |
-| Disaster Response | ``instance 2`` | ![1686020786030](image/README/1686020786030.png) |
-| Disaster Response | ``instance 3`` | ![1686020791018](image/README/1686020791018.png) |
-| Precision Farming | ``instance 0`` | ![1686020795924](image/README/1686020795924.png) |
-| Precision Farming | ``instance 1`` | ![1686020806802](image/README/1686020806802.png) |
-| Precision Farming | ``instance 2`` | ![1686020812061](image/README/1686020812061.png) |
-| Precision Farming | ``instance 3`` | ![1686020816573](image/README/1686020816573.png) |
+| Disaster Response | ``instance 0`` | ![1686022961822](image/README/1686022961822.png) |
+| Disaster Response | ``instance 1`` | ![1686022966815](image/README/1686022966815.png) |
+| Disaster Response | ``instance 2`` | ![1686022973814](image/README/1686022973814.png) |
+| Disaster Response | ``instance 3`` | ![1686022982456](image/README/1686022982456.png) |
+| Precision Farming | ``instance 0`` | ![1686023116861](image/README/1686023116861.png) |
+| Precision Farming | ``instance 1`` | ![1686023145265](image/README/1686023145265.png) |
+| Precision Farming | ``instance 2`` | ![1686023077466](image/README/1686023077466.png) |
+| Precision Farming | ``instance 3`` | ![1686023083150](image/README/1686023083150.png) |
 
 Each of the colored regions represents an area where the respective entity can be instantiated. Blue regions are starting regions, yellow regions represent goal regions and in the case of precision farming, if a goal region is not generated in the yellow region then changes to a static obstacle region but this is not the case for disaster response, instead the region where the goal was not instantiated does not impact the episode at all, the light red regions represent static obstacles, and dark red regions represent dynamic obstacles.
 
