@@ -1,10 +1,16 @@
 # A Fork of Multi-Agent Particle Environment
 
-Signal8 is an adapted version of the Simple environment, originally developed by the Farama Foundation as part of their [Multi-Agent Particle Environment (MPE)](https://pettingzoo.farama.org/environments/mpe/).
+Signal8 is an enhanced version of the Simple environment, originally developed by the [Farama Foundation](https://farama.org/) as part of their [Multi-Agent Particle Environment (MPE)](https://pettingzoo.farama.org/environments/mpe/).
 
 # Signal8
 
-This repository contains a simple multi-agent environment with continuous observations and a discrete action space, inspired by the Lewis Signaling game. The environment incorporates basic simulated physics to create a scenario where agents must communicate and collaborate effectively to navigate around both static and dynamic obstacles to reach a goal.
+Signal8 is an open-source research project that provides a robust environment for the development and evaluation of communication strategies in multi-agent systems. The project introduces a dynamic environment inspired by real-world scenarios, including disaster response and precision farming. This environment extends the principles of the Lewis signaling game to create an enriched testing ground for advanced robot-to-robot communication solutions.
+
+Each problem type in Signal8 comprises four distinct scenarios, each presenting unique constraints on where entities such as start and goal points, as well as static and dynamic obstacles, can be instantiated. This dynamism allows for extensive testing of the communication strategies under varied circumstances, making the environment realistic and versatile.
+
+A key feature of Signal8 is the asymmetric information structure inherent to the environment. Two types of agents operate within this structure - an 'eye in the sky' agent possessing global information, and ground agents equipped with only local information. This asymmetry creates a scenario akin to real-world situations, presenting challenges for the development of efficient communication methods while also offering exciting opportunities for the creation of context-dependent language and high-level directives.
+
+For more information on how to use the env API, visit [here](https://pettingzoo.farama.org/content/basic_usage/).
 
 ## Installation
 
@@ -20,23 +26,34 @@ pip install -e .
 ```
 import Signal8
 
-env = Signal8.env(dynamic_obstacles=True)
-env.reset(options={"problem_name": "v_cluster"}))
+env = Signal8.env(problem_type='disaster_response')
+env.reset(options={"instance_num": 0}))
+observation, _, terminations, truncations, _ = env.last()
+env.step(action)
 env.close()
 ```
 
 ## List of Problem Scenarios
 
-|     Names     | Description                                                                                                                                                                                          |
-| :-----------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `v_cluster` | The environment features a central square formed by four obstacles, with the start on the left and the goal on the right side.                                                                       |
-| ``h_cluster`` | The environment showcases a central L-shaped configuration of four obstacles, with the starting point on the left boundary and the goal situated at the inner elbow of the L.                        |
-|  `v_wall`  | Four obstacles are aligned vertically in the environment's center, with the starting point on the left boundary and the goal on the right boundary.                                                  |
-|  `h_wall`  | Four obstacles are arranged in a horizontal line at the environment's midsection, with the start on the left boundary and the goal on the right boundary.                                            |
-|    `top`    | Four obstacles are placed at the top of the environment, while the start is situated in the bottom half on the left boundary and the goal is in the bottom half on the right boundary.               |
-|  `bottom`  | Four obstacles are placed at the bottom of the environment, while the start is situated in the top half on the left boundary and the goal is in the top half on the right boundary.                 |
-|   `right`   | Four obstacles are situated on the right side of the environment, with the start positioned in the left half along the bottom boundary and the goal located in the left half along the top boundary. |
-|   `left`   | Four obstacles are situated on the left side of the environment, with the start positioned in the right half along the bottom boundary and the goal located in the left half along the top boundary. |
+|   Problem Type   | Scenario Name |                 Visualization                 |
+| :---------------: | :------------: | :--------------------------------------------: |
+| Disaster Response | ``Scenario 0`` | ![1686020763939](image/README/1686020763939.png) |
+| Disaster Response | ``Scenario 1`` | ![1686020779535](image/README/1686020779535.png) |
+| Disaster Response | ``Scenario 2`` | ![1686020786030](image/README/1686020786030.png) |
+| Disaster Response | ``Scenario 3`` | ![1686020791018](image/README/1686020791018.png) |
+| Precision Farming | ``Scenario 0`` | ![1686020795924](image/README/1686020795924.png) |
+| Precision Farming | ``Scenario 1`` | ![1686020806802](image/README/1686020806802.png) |
+| Precision Farming | ``Scenario 2`` | ![1686020812061](image/README/1686020812061.png) |
+| Precision Farming | ``Scenario 3`` | ![1686020816573](image/README/1686020816573.png) |
+
+Each color in the environment diagram represents a distinct region where specific entities can be instantiated.
+
+1. **Blue regions** serve as starting areas.
+2. **Yellow regions** indicate goal locations. In precision farming scenarios, should a goal not be generated within the yellow region, this area then converts to a static obstacle region. In disaster response scenarios, if a goal doesn't materialize within the yellow region, no entity is generated in its place.
+3. **Light red regions** represent static obstacles.
+4. **Dark red regions** signify dynamic obstacles.
+
+For disaster response scenarios, the dynamic obstacle, instead of moving, simulates a spreading fire by gradually expanding its radius. On the other hand, in precision farming scenarios, the dynamic obstacle mimics the behavior of an automated tractor, moving in a zig-zag pattern once it reaches its destination.
 
 ## Paper Citation
 

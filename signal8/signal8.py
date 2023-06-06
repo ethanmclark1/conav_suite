@@ -157,10 +157,10 @@ class Scenario(BaseScenario):
                 self.scripted_obstacle_threads.append(t)   
                 idx += 1
                 
-    def reset_world(self, world, np_random, problem_name=None):
+    def reset_world(self, world, np_random, instance_name=None):
         self.npc.clear()
         self.stop_scripted_obstacles()
-        self._set_problem_instance(world, np_random, problem_name)
+        self._set_problem_instance(world, np_random, instance_name)
         leftover_entities = self._reset_agents_and_goals(world, np_random)
         self._reset_obstacles(world, np_random, leftover_entities)
         self._start_scripted_obstacles(world)
