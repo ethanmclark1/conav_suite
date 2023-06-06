@@ -46,14 +46,9 @@ env.close()
 | Precision Farming | ``Scenario 2`` | ![1686020812061](image/README/1686020812061.png) |
 | Precision Farming | ``Scenario 3`` | ![1686020816573](image/README/1686020816573.png) |
 
-Each color in the environment diagram represents a distinct region where specific entities can be instantiated.
+Each of the colored regions represents an area where the respective entity can be instantiated. Blue regions are starting regions, yellow regions represent regions possible goal regions and in the case of precision farming, if a goal region is not generated in the yellow region then changes to a static obstacle region but this is not the case for disaster response, instead the region where the goal was not instantiated does not impact the episode at all, the light red regions represent static obstacles, and dark red regions represent dynamic obstacles.
 
-1. **Blue regions** serve as starting areas.
-2. **Yellow regions** indicate goal locations. In precision farming scenarios, should a goal not be generated within the yellow region, this area then converts to a static obstacle region. In disaster response scenarios, if a goal doesn't materialize within the yellow region, no entity is generated in its place.
-3. **Light red regions** represent static obstacles.
-4. **Dark red regions** signify dynamic obstacles.
-
-For disaster response scenarios, the dynamic obstacle, instead of moving, simulates a spreading fire by gradually expanding its radius. On the other hand, in precision farming scenarios, the dynamic obstacle mimics the behavior of an automated tractor, moving in a zig-zag pattern once it reaches its destination.
+In the case of disaster response, the dynamic obstacle does not move, instead it incrementally increases the obstacle radius to simulate a fire. In the precision farming case, the dynamic obstacle represents the behavior of a hockey rink ice cleaner moving in zig zags. 
 
 ## Paper Citation
 
