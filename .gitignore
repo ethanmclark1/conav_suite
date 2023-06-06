@@ -132,3 +132,11 @@ dmypy.json
 main.py
 Signal8.code-workspace
 Signal8/utils/test_dynamic_obs.py
+scenarios/disaster_response_0.png
+scenarios/disaster_response_1.png
+scenarios/disaster_response_2.png
+scenarios/disaster_response_3.png
+scenarios/precision_farming_0.png
+scenarios/precision_farming_1.png
+scenarios/precision_farming_2.png
+scenarios/precision_farming_3.png
