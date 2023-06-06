@@ -133,10 +133,10 @@ class SimpleEnv(AECEnv):
         agent_pos = np.array([agent.state.p_pos for agent in self.world.agents])
         goal_pos = np.array([(agent.goal_a.state.p_pos, agent.goal_b.state.p_pos) for agent in self.world.agents])
         try:
-            [self.scenario.obstacle_locks[i].acquire() for i in range(len(self.scenario.obstacle_locks))]
+            [obs.lock.acquire() for obs in self.world.obstacles if obs.lock is not None]
             obs_pos = np.array([obs.state.p_pos for obs in self.world.obstacles])
         finally:
-            [self.scenario.obstacle_locks[i].release() for i in range(len(self.scenario.obstacle_locks))]
+            [obs.lock.release() for obs in self.world.obstacles if obs.lock is not None]
         
         entities = {'agents': agent_pos, 'goals': goal_pos, 'obstacles': obs_pos}
         return entities
@@ -206,8 +206,7 @@ class SimpleEnv(AECEnv):
 
         crossed_threshold_static = [dist <= static_obs_threshold for dist in static_obs_dist]
 
-        for lock in self.scenario.obstacle_locks:
-            lock.acquire()
+        [obs.lock.acquire() for obs in dynamic_obs]
 
         try:
             dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
@@ -230,8 +229,7 @@ class SimpleEnv(AECEnv):
                         self.agents[i].reached_safety = True
                         terminations[i] = True
         finally:
-            for lock in self.scenario.obstacle_locks:
-                lock.release()
+            [obs.lock.release() for obs in dynamic_obs]
 
         return {'terminations': terminations, 'truncations': truncations}
 

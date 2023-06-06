@@ -18,7 +18,8 @@ class NPC:
         bounds = self.farming_instances[instance_num]['bounds']
         
         action = np.array([0, 0])
-        x, y, = obs.state.p_pos
+        with obs.lock:
+            x, y, = obs.state.p_pos
         
         if self.status == 'moving_to_destination':
             if np.allclose([x, y], destination, atol=0.05):

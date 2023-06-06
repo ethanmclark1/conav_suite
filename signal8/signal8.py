@@ -42,7 +42,6 @@ class Scenario(BaseScenario):
         world.problem_type = problem_type
         
         self.npc = []
-        self.obstacle_locks = []
         self.scripted_obstacle_threads = []
         self.scripted_obstacle_running = False
 
@@ -104,7 +103,7 @@ class Scenario(BaseScenario):
     def _reset_dynamic_obstacle(self, world, obstacle, np_random, temp_dynamic_obs_constr):
         obstacle.size = 0.025
         obstacle.movable = True
-        self.obstacle_locks += [threading.Lock()]
+        obstacle.lock = threading.Lock()
         obstacle.color = np.array([0.26, 0.32, 0.36])
         obstacle.state.p_vel = np.zeros(world.dim_p)
         dynamic_obs_constr = random.choice(temp_dynamic_obs_constr)
@@ -148,14 +147,12 @@ class Scenario(BaseScenario):
     
     # Start a thread for each dynamic obstacle
     def _start_scripted_obstacles(self, world):
-        idx = 0
         self.scripted_obstacle_running = True
         for obstacle in world.obstacles:
             if obstacle.movable:
-                t = threading.Thread(target=self.run_scripted_obstacle, args=(world, obstacle, idx))
+                t = threading.Thread(target=self.run_scripted_obstacle, args=(world, obstacle))
                 t.start()
                 self.scripted_obstacle_threads.append(t)   
-                idx += 1
                 
     def reset_world(self, world, np_random, instance_name=None):
         self.npc.clear()
@@ -181,7 +178,7 @@ class Scenario(BaseScenario):
         
         for i, obstacle in enumerate(world.obstacles):
             if obstacle.movable:
-                with self.obstacle_locks[i]:
+                with obstacle.lock:
                     obs_pos = obstacle.state.p_pos
             else:
                 obs_pos = obstacle.state.p_pos
@@ -199,10 +196,10 @@ class Scenario(BaseScenario):
         return np.concatenate((agent_pos, agent_vel, np.concatenate(observed_obstacles, axis=0), observed_goal))
             
     # Run a thread for each scripted obstacle
-    def run_scripted_obstacle(self, world, obstacle, obstacle_idx):
+    def run_scripted_obstacle(self, world, obstacle):
         sensitivity = 2.0
         while self.scripted_obstacle_running:
-            with self.obstacle_locks[obstacle_idx]:
+            with obstacle.lock:
                 # self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
                 action = self._action_callback(obstacle, world)
                 obstacle.action = action * sensitivity
@@ -236,7 +233,6 @@ class Scenario(BaseScenario):
         for t in self.scripted_obstacle_threads:
             t.join()
         self.scripted_obstacle_threads.clear()
-        self.obstacle_locks.clear()
         
     # Create a logger to log information from threads
     def _add_logger(self):

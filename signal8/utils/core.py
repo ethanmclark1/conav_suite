@@ -50,6 +50,7 @@ class Obstacle(Entity):  # properties of obstacles entities
         self.action = None
         # script behavior to execute
         self.action_callback = None
+        self.lock = None
     
     # updates the state of the obstacle
     def move(self, dt=0.1, damping=0.25):
