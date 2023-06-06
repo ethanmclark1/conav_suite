@@ -4,13 +4,15 @@ Signal8 is an enhanced version of the Simple environment, originally developed b
 
 # Signal8
 
-Signal8 is an open-source research project that provides a robust environment for the development and evaluation of communication strategies in multi-agent systems. The project introduces a dynamic environment inspired by real-world scenarios, including disaster response and precision farming. This environment extends the principles of the Lewis signaling game to create an enriched testing ground for advanced robot-to-robot communication solutions.
+Signal8 is an open-source research project devoted to facilitating the evolution of communication strategies in multi-agent systems. The project, drawing inspiration from real-world scenarios such as disaster response and precision farming, features a dynamic environment that elevates the principles of the Lewis signaling game. This unique setting serves as a testing ground for the advancement of robot-to-robot communication protocols.
 
-Each problem type in Signal8 comprises four distinct scenarios, each presenting unique constraints on where entities such as start and goal points, as well as static and dynamic obstacles, can be instantiated. This dynamism allows for extensive testing of the communication strategies under varied circumstances, making the environment realistic and versatile.
+Each problem set within Signal8 encompasses four distinct instances, with each one posing different constraints on the positioning of entities such as starting points, goals, and both static and dynamic obstacles. This dynamic feature fosters examination of communication strategies in diverse settings, enhancing the environment's realism and adaptability.
 
-A key feature of Signal8 is the asymmetric information structure inherent to the environment. Two types of agents operate within this structure - an 'eye in the sky' agent possessing global information, and ground agents equipped with only local information. This asymmetry creates a scenario akin to real-world situations, presenting challenges for the development of efficient communication methods while also offering exciting opportunities for the creation of context-dependent language and high-level directives.
+A notable characteristic of Signal8 is its incorporation of asymmetric information, whereby two types of agents – an 'eye in the sky' agent with global information and ground agents with only local information – operate simultaneously. This asymmetry replicates real-world situations, presenting challenges for the development of efficient communication strategies. It also provides intriguing prospects for the generation of context-dependent language and high-level directives.
 
-For more information on how to use the env API, visit [here](https://pettingzoo.farama.org/content/basic_usage/).
+In Signal8, both static and dynamic obstacles are present, creating further complexities for agents navigating through the environment. Static obstacles provide persistent barriers, while dynamic obstacles introduce predictable elements that can move or change over time. This complexity enriches the environment, making it an even more challenging and realistic platform for testing multi-agent communication strategies.
+
+For more information on utilizing the environment API, please refer to the [PettingZoo API documentation](https://pettingzoo.farama.org/content/basic_usage/).
 
 ## Installation
 
@@ -33,22 +35,22 @@ env.step(action)
 env.close()
 ```
 
-## List of Problem Scenarios
+## List of Problem Instances
 
-|   Problem Type   | Scenario Name |                 Visualization                 |
+|   Problem Type   | Instance Name |                 Visualization                 |
 | :---------------: | :------------: | :--------------------------------------------: |
-| Disaster Response | ``Scenario 0`` | ![1686020763939](image/README/1686020763939.png) |
-| Disaster Response | ``Scenario 1`` | ![1686020779535](image/README/1686020779535.png) |
-| Disaster Response | ``Scenario 2`` | ![1686020786030](image/README/1686020786030.png) |
-| Disaster Response | ``Scenario 3`` | ![1686020791018](image/README/1686020791018.png) |
-| Precision Farming | ``Scenario 0`` | ![1686020795924](image/README/1686020795924.png) |
-| Precision Farming | ``Scenario 1`` | ![1686020806802](image/README/1686020806802.png) |
-| Precision Farming | ``Scenario 2`` | ![1686020812061](image/README/1686020812061.png) |
-| Precision Farming | ``Scenario 3`` | ![1686020816573](image/README/1686020816573.png) |
+| Disaster Response | ``instance 0`` | ![1686020763939](image/README/1686020763939.png) |
+| Disaster Response | ``instance 1`` | ![1686020779535](image/README/1686020779535.png) |
+| Disaster Response | ``instance 2`` | ![1686020786030](image/README/1686020786030.png) |
+| Disaster Response | ``instance 3`` | ![1686020791018](image/README/1686020791018.png) |
+| Precision Farming | ``instance 0`` | ![1686020795924](image/README/1686020795924.png) |
+| Precision Farming | ``instance 1`` | ![1686020806802](image/README/1686020806802.png) |
+| Precision Farming | ``instance 2`` | ![1686020812061](image/README/1686020812061.png) |
+| Precision Farming | ``instance 3`` | ![1686020816573](image/README/1686020816573.png) |
 
 Each of the colored regions represents an area where the respective entity can be instantiated. Blue regions are starting regions, yellow regions represent regions possible goal regions and in the case of precision farming, if a goal region is not generated in the yellow region then changes to a static obstacle region but this is not the case for disaster response, instead the region where the goal was not instantiated does not impact the episode at all, the light red regions represent static obstacles, and dark red regions represent dynamic obstacles.
 
-In the case of disaster response, the dynamic obstacle does not move, instead it incrementally increases the obstacle radius to simulate a fire. In the precision farming case, the dynamic obstacle represents the behavior of a hockey rink ice cleaner moving in zig zags. 
+In the case of disaster response, the dynamic obstacle does not move, instead it incrementally increases the obstacle radius to simulate a fire. In the precision farming case, the dynamic obstacle represents the behavior of a hockey rink ice cleaner moving in zig zags.
 
 ## Paper Citation
 
