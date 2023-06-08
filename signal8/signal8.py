@@ -200,7 +200,7 @@ class Scenario(BaseScenario):
         sensitivity = 2.0
         while self.scripted_obstacle_running:
             with obstacle.lock:
-                # self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
+                self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
                 action = self._action_callback(obstacle, world)
                 obstacle.action = action * sensitivity
                 obstacle.move()
