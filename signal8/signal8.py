@@ -204,7 +204,7 @@ class Scenario(BaseScenario):
                 action = self._action_callback(obstacle, world)
                 obstacle.action = action * sensitivity
                 obstacle.move()
-                time.sleep(0.25)
+            time.sleep(0.5)
         
     # disaster response: increase obstacle size to resemble increasing size of fire
     # precision farming: move obstacle in a zig-zag pattern to resemble a tractor
