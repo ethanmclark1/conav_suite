@@ -12,13 +12,14 @@ class NPC:
             3: {'destination': (-0.75, -0.90), 'direction': [1, 1], 'bounds': [(-1, 1), (-1, -0.4)]},
         }
     
-    def get_scripted_action(self, obs, instance_num):
+    def get_scripted_action(self, obstacle, instance_num):
         destination = self.farming_instances[instance_num]['destination']
         direction = self.farming_instances[instance_num]['direction']
         bounds = self.farming_instances[instance_num]['bounds']
         
         action = np.array([0, 0])
-        x, y, = obs.state.p_pos
+        with obstacle.lock:
+            x, y, = obstacle.state.p_pos
         
         if self.status == 'moving_to_destination':
             if np.allclose([x, y], destination, atol=0.05):

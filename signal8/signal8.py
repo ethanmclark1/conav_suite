@@ -197,35 +197,36 @@ class Scenario(BaseScenario):
             
     # Run a thread for each scripted obstacle
     def run_scripted_obstacle(self, world, obstacle):
-        sensitivity = 2.0
         while self.scripted_obstacle_running:
-            with obstacle.lock:
-                # self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
-                action = self._action_callback(obstacle, world)
-                obstacle.action = action * sensitivity
-                obstacle.move()
-                time.sleep(0.25)
+            self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
+            action, size = self._action_callback(obstacle, world)
+            obstacle.update(action, size)
+            time.sleep(0.5)
         
     # disaster response: increase obstacle size to resemble increasing size of fire
     # precision farming: move obstacle in a zig-zag pattern to resemble a tractor
-    def _action_callback(self, obs, world):
-        action = np.zeros(world.dim_p)
+    def _action_callback(self, obstacle, world):
+        size = None
+        action = None
         instance = world.problem_instance
         if world.problem_type == 'disaster_response':
             if instance == 'instance_0':
-                obs.size += 0.005
+                size = 0.005
             elif instance == 'instance_1':
-                obs.size += 0.0075
+                size = 0.0075
             elif instance == 'instance_2':
-                obs.size += 0.01
+                size = 0.01
             elif instance == 'instance_3':
-                obs.size += 0.0125
+                size = 0.0125
         else:
-            obs_num = int(obs.name.split('_')[-1])
+            action = np.zeros(world.dim_p)
+            obstacle_num = int(obstacle.name.split('_')[-1])
             instance_num = int(instance.split('_')[-1])
-            action = self.npc[obs_num].get_scripted_action(obs, instance_num)
+            action = self.npc[obstacle_num].get_scripted_action(obstacle, instance_num)
+            sensitivity = 2.0
+            action *= sensitivity
 
-        return action
+        return action, size
 
     # Stop all threads for scripted obstacles
     def stop_scripted_obstacles(self):

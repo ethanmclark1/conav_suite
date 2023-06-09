@@ -46,17 +46,21 @@ class Obstacle(Entity):  # properties of obstacles entities
         super().__init__()
         # entity can be moved / pushed
         self.movable = False
-        # action
-        self.action = None
         # script behavior to execute
         self.action_callback = None
         self.lock = None
     
     # updates the state of the obstacle
-    def move(self, dt=0.1, damping=0.25):
-        self.state.p_vel = self.state.p_vel * (1 - damping)
-        self.state.p_vel += (self.action / self.mass) * dt
-        self.state.p_pos += self.state.p_vel * dt
+    def update(self, action=None, size=None, dt=0.1, damping=0.25):
+        with self.lock:
+            if action is not None:
+                self.state.p_vel = self.state.p_vel * (1 - damping)
+                self.state.p_vel += (action / self.mass) * dt
+                self.state.p_pos += self.state.p_vel * dt
+            elif size is not None:
+                self.size += size
+            else:
+                raise ValueError("Either action or size must be specified")
         
 
 class Agent(Entity):  # properties of agent entities
