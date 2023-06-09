@@ -198,7 +198,7 @@ class Scenario(BaseScenario):
     # Run a thread for each scripted obstacle
     def run_scripted_obstacle(self, world, obstacle):
         while self.scripted_obstacle_running:
-            self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
+            # self.logger.debug(f'{obstacle.name} size: {obstacle.size:}, position: {obstacle.state.p_pos}')
             action, size = self._action_callback(obstacle, world)
             obstacle.update(action, size)
             time.sleep(0.5)
