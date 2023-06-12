@@ -52,7 +52,7 @@ class SimpleEnv(AECEnv):
         self.world = world
         self.local_ratio = local_ratio
 
-        self.scenario.reset_world(self.world, self.np_random, 'v_cluster')
+        self.scenario.reset_world(self.world, self.np_random, 'corners')
         self.agents = [agent.name for agent in self.world.agents]
         self.possible_agents = self.agents[:]
         self._index_map = {agent.name: idx for idx, agent in enumerate(self.world.agents)}
@@ -134,14 +134,14 @@ class SimpleEnv(AECEnv):
         self.steps = 0
 
         self.current_actions = [None] * len(self.world.agents)
-        
+    
     def get_start_state(self):
         if not self._reset_called:
             raise Exception("Cannot get start state without calling reset() first")
         
         agent_pos = np.array([agent.state.p_pos for agent in self.world.agents])
         goal_pos = np.array([(agent.goal_a.state.p_pos, agent.goal_b.state.p_pos) for agent in self.world.agents])
-        obs_pos = np.array([obs.state.p_pos for obs in self.world.obstacles])
+        obs_pos = np.array([obs.state.p_pos for obs in self.world.large_obstacles])
         
         entities = {'agents': agent_pos, 'goals': goal_pos, 'obstacles': obs_pos}
         return entities
@@ -196,6 +196,7 @@ class SimpleEnv(AECEnv):
         # make sure we used all elements of action
         assert len(action) == 0
     
+    # TODO: Account for large and small obstacles
     # Check if episode is terminated or truncated
     def _episode_status(self):        
         static_obs = [obs for obs in self.world.obstacles if not obs.movable]

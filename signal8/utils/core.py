@@ -19,7 +19,7 @@ class Entity:  # properties and state of physical world entity
         # name
         self.name = ""
         # properties:
-        self.size = 0.1
+        self.size = 0.050
         # entity can move / be pushed
         self.movable = False
         # entity collides with others
@@ -42,10 +42,12 @@ class Goal(Entity): # properties of goal entities
 
 
 class Obstacle(Entity):  # properties of obstacles entities
-    def __init__(self):
+    def __init__(self, size):
         super().__init__()
         # entity can be moved / pushed
         self.movable = False
+        # entity size
+        self.size = size
         
 
 class Agent(Entity):  # properties of agent entities
@@ -71,7 +73,8 @@ class World:  # multi-agent world
         # list of agents and entities (can change at execution-time!)
         self.agents = []
         self.goals = []
-        self.obstacles = []
+        self.small_obstacles = []
+        self.large_obstacles = []
         # position dimensionality
         self.dim_p = 2
         # color dimensionality
@@ -83,6 +86,8 @@ class World:  # multi-agent world
         # contact response parameters
         self.contact_force = 1e2
         self.contact_margin = 1e-3
+        # minimum distance required between entities (used for resetting positions)
+        self.buffer_dist = 0
         # problem instance
         self.problem_instance = None
         self.instance_constr = None
@@ -90,7 +95,7 @@ class World:  # multi-agent world
     # return all entities in the world
     @property
     def entities(self):
-        return self.agents + self.goals + self.obstacles
+        return self.agents + self.goals + self.large_obstacles
 
     # update state of the world
     def step(self):

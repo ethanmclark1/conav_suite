@@ -1,7 +1,8 @@
 import copy
-import random
 import numpy as np
+import matplotlib.path as mpath
 
+from functools import partial
 # TODO
 from utils.scenario import BaseScenario
 from utils.simple_env import SimpleEnv, make_env
@@ -12,12 +13,22 @@ from gymnasium.utils import EzPickle
 
 
 class raw_env(SimpleEnv, EzPickle):
-    def __init__(self, num_agents=2, render_mode=None):
+    def __init__(
+        self, 
+        num_agents=2, 
+        num_large_obstacles=4, 
+        num_small_obstacles=10, 
+        render_mode=None
+        ):
+        
         if num_agents > 2:
             raise ValueError("Signal8 currently can only support up to 2 agents.")
         
+        if num_large_obstacles > 4:
+            raise ValueError("Signal8 can only support up to 4 obstacles.")
+        
         scenario = Scenario()
-        world = scenario.make_world(num_agents)
+        world = scenario.make_world(num_agents, num_large_obstacles, num_small_obstacles)
         
         super().__init__(
             scenario=scenario, 
@@ -29,7 +40,7 @@ class raw_env(SimpleEnv, EzPickle):
 env = make_env(raw_env)
 
 class Scenario(BaseScenario):
-    def make_world(self, num_agents):
+    def make_world(self, num_agents, num_large_obstacles, num_small_obstacles):
         world = World()
         world.problem_list = get_problem_list()
 
@@ -54,69 +65,136 @@ class Scenario(BaseScenario):
                 goal.color = np.array([0.85, 0.90, 0.99])
             world.goals.append(goal)
         
-        for i in range(4):
-            obstacle = Obstacle()
+        # Large obstacles can only be observed by aerial agent
+        for i in range(num_large_obstacles):
+            obstacle = Obstacle(size=0.1)
             obstacle.name = f"obs_{i}"
             obstacle.color = np.array([0.97, 0.801, 0.8])
-            world.obstacles.append(obstacle)
+            world.large_obstacles.append(obstacle)
         
+        # Small obstacles can only be observed by ground agent(s)
+        for i in range(num_small_obstacles):
+            obstacle = Obstacle(size=0.01)
+            obstacle.name = f"obs_{i}"
+            obstacle.color = np.array([0.97, 0.801, 0.8])
+            world.small_obstacles.append(obstacle)    
+        
+        world.buffer_dist = world.agents[0].size + world.large_obstacles[0].size
         return world
     
-    # Get constraints on entities given the problem instance name
+    # Get constraints on entities given problem instance name
     def _set_problem_instance(self, world, instance_name):
         instance_constr = get_problem_instance(instance_name)
         world.problem_instance = instance_name
         world.instance_constr = instance_constr
-        
-    # Reset obstacles to their initial positions
-    def _reset_obstacles(self, world, np_random):
-        for i, obstacle in enumerate(world.obstacles):            
-            obstacle.state.p_vel = np.zeros(world.dim_p)
-            idx = i % len(world.instance_constr)
-            obstacle.state.p_pos = np_random.uniform(*zip(*world.instance_constr[idx]))
-                    
-    # Reset agents and goals to their initial positions
-    def _reset_agents_and_goals(self, world, np_random):
-        # Retrieve safe coordinates outside of the obstacles constraints
-        x_constr = [constr[0] for constr in world.instance_constr]
-        y_constr = [constr[1] for constr in world.instance_constr]
-        def generate_safe_position():
-            while True:
-                x = np_random.uniform(-1, +1)
-                y = np_random.uniform(-1, +1)
-                if all(not (low <= x <= high) for low, high in x_constr) and all(not (low <= y <= high) for low, high in y_constr):
-                    break
-            return np.array([x, y])
-        
-        for i, agent in enumerate(world.agents):
-            agent.state.p_vel = np.zeros(world.dim_p)
-            agent.state.p_pos = generate_safe_position()
     
+    # Generate valid points according to some condition
+    def _generate_position(self, np_random, condition):
+        while True:
+            point = np_random.uniform(-1, +1, 2)
+            if condition(point):
+                break
+        return point
+    
+    # Check if point is outside of rectangular obstacle regions
+    def _safe_position(self, point, epsilon, x_constraints, y_constraints):
+        return all(not (low - epsilon <= point[0] <= high + epsilon) for low, high in x_constraints) \
+            and all(not (low - epsilon <= point[1] <= high + epsilon) for low, high in y_constraints)
+
+    # Check if point is outside of triangular obstacle regions
+    def _outside_triangle(self, point, paths, epsilon):
+        enlarged_paths = []
+        for path in paths:
+            centroid = np.mean(path.vertices[:-1], axis=0)
+            enlarged_vertices = path.vertices + epsilon * (path.vertices - centroid)
+            enlarged_paths.append(mpath.Path(enlarged_vertices))
+        return not any(path.contains_points(point[None, :]) for path in enlarged_paths)
+    
+    # Reset agents and goals to their initial positions
+    def _reset_agents_and_goals(self, world, np_random, paths):
+        epsilon = world.buffer_dist
+        
+        if paths is None:
+            x_constraints = [constr[0] for constr in world.instance_constr]
+            y_constraints = [constr[1] for constr in world.instance_constr]
+
+        for i, agent in enumerate(world.agents):
             agent.goal_a = world.goals[i]
-            agent.goal_a.state.p_vel = np.zeros(world.dim_p)
-            agent.goal_a.state.p_pos = generate_safe_position()
-            
             agent.goal_b = world.goals[len(world.goals) - 1 - i]
+
+            agent.state.p_vel = np.zeros(world.dim_p)
+            agent.goal_a.state.p_vel = np.zeros(world.dim_p)
             agent.goal_b.state.p_vel = np.zeros(world.dim_p)
+
+            if world.problem_instance == 'corners':
+                condition = partial(
+                    self._outside_triangle, 
+                    paths=paths, 
+                    epsilon=epsilon
+                    )
+            else:
+                condition = partial(
+                    self._safe_position, 
+                    epsilon=epsilon, 
+                    x_constraints=x_constraints, 
+                    y_constraints=y_constraints
+                    )
+
+            agent.state.p_pos = self._generate_position(np_random, condition)
+            agent.goal_a.state.p_pos = self._generate_position(np_random, condition)
             agent.goal_b.state.p_pos = copy.copy(agent.state.p_pos)
+    
+    # Reset all large obstacles to a position that does not intersect with the agents
+    def _reset_large_obstacles(self, world, np_random, paths):
+        def inside_triangle_condition(point):
+            return any(path.contains_points(point[None, :]) for path in paths)
+                
+        occupied_triangles = set()
+        for i, large_obstacle in enumerate(world.large_obstacles):            
+            large_obstacle.state.p_vel = np.zeros(world.dim_p)
+            idx = i % len(world.instance_constr)
+            
+            # Each corner may only have one large_obstacle in it
+            if world.problem_instance == 'corners':
+                while True:
+                    pos = self._generate_position(np_random, inside_triangle_condition)
+                    triangle_idx = next((i for i, path in enumerate(paths) if path.contains_points(pos[None, :])), None)
+                    if triangle_idx not in occupied_triangles:
+                        large_obstacle.state.p_pos = pos
+                        occupied_triangles.add(triangle_idx)
+                        break
+            else:                
+                large_obstacle.state.p_pos = np_random.uniform(*zip(*world.instance_constr[idx]))
+    
+    # TODO
+    # Reset all small obstacles to a position that does not intersect with the agents or the large obstacles
+    def _reset_small_obstacles(self, world, np_random, paths):
+        epsilon = world.buffer_dist
+                                            
                         
     def reset_world(self, world, np_random, problem_instance):
         self._set_problem_instance(world, problem_instance)
-        self._reset_obstacles(world, np_random)
-        self._reset_agents_and_goals(world, np_random)
+        
+        paths = [mpath.Path(np.array(triangle)) for triangle in world.instance_constr] \
+            if world.problem_instance == 'corners' else None
+            
+        self._reset_agents_and_goals(world, np_random, paths)
+        self._reset_large_obstacles(world, np_random, paths)
+        self._reset_small_obstacles(world, np_random, paths)
     
     # Reward given by agents to agents for reaching their respective goals
     def reward(self, agent, world):
         return 0
     
+    # TODO: Account for large and small obstacles
     def observation(self, agent, world):
         agent_pos = agent.state.p_pos
         agent_vel = agent.state.p_vel
         
-        num_obstacles = len(world.obstacles)
+        num_large_obstacles = len(world.obstacles)
         max_observable_dist = agent.max_observable_dist
         
-        observed_obstacles = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_obstacles)]
+        observed_obstacles = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_large_obstacles)]
         observed_goal = np.full_like(agent_pos, max_observable_dist)
         
         for i, obstacle in enumerate(world.obstacles):
