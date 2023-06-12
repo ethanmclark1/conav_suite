@@ -29,7 +29,7 @@ pip install -e .
 import Signal8
 
 env = Signal8.env()
-env.reset(options={"problem_instance": 'corners}))
+env.reset(options={'problem_instance': 'corners'}))
 observation, _, terminations, truncations, _ = env.last()
 env.step(action)
 env.close()
