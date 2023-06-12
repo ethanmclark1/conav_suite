@@ -46,21 +46,6 @@ class Obstacle(Entity):  # properties of obstacles entities
         super().__init__()
         # entity can be moved / pushed
         self.movable = False
-        # script behavior to execute
-        self.action_callback = None
-        self.lock = None
-    
-    # updates the state of the obstacle
-    def update(self, action=None, size=None, dt=0.1, damping=0.25):
-        with self.lock:
-            if action is not None:
-                self.state.p_vel = self.state.p_vel * (1 - damping)
-                self.state.p_vel += (action / self.mass) * dt
-                self.state.p_pos += self.state.p_vel * dt
-            elif size is not None:
-                self.size += size
-            else:
-                raise ValueError("Either action or size must be specified")
         
 
 class Agent(Entity):  # properties of agent entities
@@ -78,7 +63,7 @@ class Agent(Entity):  # properties of agent entities
         self.state = AgentState()
         # action
         self.action = None
-        # how far the agent can see
+        # how far the agent can sense around itself
         self.max_observable_dist = 0.30
 
 class World:  # multi-agent world
@@ -98,12 +83,9 @@ class World:  # multi-agent world
         # contact response parameters
         self.contact_force = 1e2
         self.contact_margin = 1e-3
-        self.problem_type = None
+        # problem instance
         self.problem_instance = None
-        self.start_constr = None
-        self.goal_constr = None
-        self.static_obstacle_constr = None
-        self.dynamic_obstacle_constr = None
+        self.instance_constr = None
         
     # return all entities in the world
     @property

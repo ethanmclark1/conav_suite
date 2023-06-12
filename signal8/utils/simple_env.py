@@ -44,14 +44,15 @@ class SimpleEnv(AECEnv):
         self.game_font = pygame.freetype.Font(None, 20)
 
         self.renderOn = False
-        self._reset_called = False
         self.seed()
+        self._reset_called = False
 
         self.max_cycles = max_cycles
         self.scenario = scenario
         self.world = world
         self.local_ratio = local_ratio
 
+        self.scenario.reset_world(self.world, self.np_random, 'v_cluster')
         self.agents = [agent.name for agent in self.world.agents]
         self.possible_agents = self.agents[:]
         self._index_map = {agent.name: idx for idx, agent in enumerate(self.world.agents)}
@@ -59,19 +60,28 @@ class SimpleEnv(AECEnv):
         self._agent_selector = agent_selector(self.agents)
 
         # set spaces
+        state_dim = 0
         self.action_spaces = dict()
         self.observation_spaces = dict()
-        obs_dim = 14 if world.problem_type == 'disaster_response' else 24
+        
         for agent in self.world.agents:
             space_dim = self.world.dim_p * 2 + 1
             self.action_spaces[agent.name] = spaces.Discrete(space_dim)
+            obs_dim = len(self.scenario.observation(agent, self.world))
             self.observation_spaces[agent.name] = spaces.Box(
                 low=-np.float32(1),
                 high=+np.float32(1),
                 shape=(obs_dim,),
                 dtype=np.float32,
             )
+            state_dim += obs_dim
             
+        self.state_space = spaces.Box(
+            low=-np.float32(1),
+            high=+np.float32(1),
+            shape=(state_dim,),
+            dtype=np.float32,
+        )
         self.steps = 0
         self.current_actions = [None] * self.num_agents
 
@@ -102,18 +112,17 @@ class SimpleEnv(AECEnv):
         if seed is not None:
             self.seed(seed=seed)
             
-        if 'instance_num' not in options:
-            raise ValueError("Must provide an instance_num to reset the environment with.")
+        if 'problem_instance' not in options:
+            raise ValueError("Must provide a problem_instance to reset the environment with.")
         
-        instance_num = options['instance_num']
-        if not 0 <= instance_num <= 3:
-            raise ValueError("instance_num must be between 0 and 3.")
+        problem_instance = options['problem_instance']
+        if problem_instance not in self.world.problem_list:
+            raise ValueError("problem_instance must be in the problem_list.")
         
-        self.scenario.reset_world(self.world, self.np_random, instance_num)
+        self.scenario.reset_world(self.world, self.np_random, problem_instance)
 
         self.agents = self.possible_agents[:]
-        # PettingZoo Gymansium requires rewards to be set
-        # even if they are not used
+        # PettingZoo Gymansium requires rewards to be set even if not used
         self.rewards = {name: 0.0 for name in self.agents}
         self._cumulative_rewards = {name: 0.0 for name in self.agents}
         self.terminations = {name: False for name in self.agents}
@@ -132,11 +141,7 @@ class SimpleEnv(AECEnv):
         
         agent_pos = np.array([agent.state.p_pos for agent in self.world.agents])
         goal_pos = np.array([(agent.goal_a.state.p_pos, agent.goal_b.state.p_pos) for agent in self.world.agents])
-        try:
-            [obs.lock.acquire() for obs in self.world.obstacles if obs.lock is not None]
-            obs_pos = np.array([obs.state.p_pos for obs in self.world.obstacles])
-        finally:
-            [obs.lock.release() for obs in self.world.obstacles if obs.lock is not None]
+        obs_pos = np.array([obs.state.p_pos for obs in self.world.obstacles])
         
         entities = {'agents': agent_pos, 'goals': goal_pos, 'obstacles': obs_pos}
         return entities
@@ -193,7 +198,6 @@ class SimpleEnv(AECEnv):
     
     # Check if episode is terminated or truncated
     def _episode_status(self):        
-        dynamic_obs = [obs for obs in self.world.obstacles if obs.movable]
         static_obs = [obs for obs in self.world.obstacles if not obs.movable]
 
         goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal_a.size
@@ -205,31 +209,20 @@ class SimpleEnv(AECEnv):
                            for agent in self.world.agents]
 
         crossed_threshold_static = [dist <= static_obs_threshold for dist in static_obs_dist]
+        
+        truncations = [crossed_stat for crossed_stat in crossed_threshold_static]
+        truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
 
-        [obs.lock.acquire() for obs in dynamic_obs]
+        terminations = [False] * self.num_agents
+        for i, dist in enumerate(goal_a_dist):
+            if dist <= goal_dist_threshold:
+                self.world.agents[i].reached_goal = True
 
-        try:
-            dynamic_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in dynamic_obs)
-                                for agent in self.world.agents] 
-            dynamic_obs_threshold = [agent.size + obs.size for agent, obs in zip(self.world.agents, dynamic_obs)]   
-
-            crossed_threshold_dynamic = [dist <= threshold for dist, threshold in zip(dynamic_obs_dist, dynamic_obs_threshold)]
-
-            truncations = [crossed_stat or crossed_dyn for crossed_stat, crossed_dyn in zip(crossed_threshold_static, crossed_threshold_dynamic)]
-            truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
-
-            terminations = [False] * self.num_agents
-            for i, dist in enumerate(goal_a_dist):
+        for i, dist in enumerate(goal_b_dist):
+            if self.world.agents[i].reached_goal:
                 if dist <= goal_dist_threshold:
-                    self.world.agents[i].reached_goal = True
-
-            for i, dist in enumerate(goal_b_dist):
-                if self.world.agents[i].reached_goal:
-                    if dist <= goal_dist_threshold:
-                        self.agents[i].reached_safety = True
-                        terminations[i] = True
-        finally:
-            [obs.lock.release() for obs in dynamic_obs]
+                    self.agents[i].reached_safety = True
+                    terminations[i] = True
 
         return {'terminations': terminations, 'truncations': truncations}
 
@@ -318,4 +311,3 @@ class SimpleEnv(AECEnv):
             pygame.event.pump()
             pygame.display.quit()
             self.renderOn = False
-        self.unwrapped.scenario.stop_scripted_obstacles()
