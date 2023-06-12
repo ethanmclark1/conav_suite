@@ -28,8 +28,8 @@ pip install -e .
 ```
 import Signal8
 
-env = Signal8.env(problem_type='disaster_response')
-env.reset(options={"instance_num": 0}))
+env = Signal8.env()
+env.reset(options={"problem_instance": 0}))
 observation, _, terminations, truncations, _ = env.last()
 env.step(action)
 env.close()
@@ -37,16 +37,16 @@ env.close()
 
 ## List of Problem Instances
 
-|   Problem Type   | Instance Name |                 Visualization                 |
-| :---------------: | :------------: | :--------------------------------------------: |
-| Disaster Response | ``instance 0`` | ![1686023513741](image/README/1686023513741.png) |
-| Disaster Response | ``instance 1`` | ![1686023519237](image/README/1686023519237.png) |
-| Disaster Response | ``instance 2`` | ![1686023523656](image/README/1686023523656.png) |
-| Disaster Response | ``instance 3`` | ![1686023529431](image/README/1686023529431.png) |
-| Precision Farming | ``instance 0`` | ![1686023534970](image/README/1686023534970.png) |
-| Precision Farming | ``instance 1`` | ![1686023540501](image/README/1686023540501.png) |
-| Precision Farming | ``instance 2`` | ![1686023545379](image/README/1686023545379.png) |
-| Precision Farming | ``instance 3`` | ![1686023549246](image/README/1686023549246.png) |
+| Problem Instance |                 Visualization                 |
+| :--------------: | :--------------------------------------------: |
+|  ``corners``   | ![1686604788813](image/README/1686604788813.png) |
+|   ``quarters``   | ![1686604799335](image/README/1686604799335.png) |
+|    ``cross``    | ![1686604808540](image/README/1686604808540.png) |
+|   ``cluster``   | ![1686604839072](image/README/1686604839072.png) |
+|     ``left``     | ![1686604845732](image/README/1686604845732.png) |
+|    ``right``    | ![1686604851758](image/README/1686604851758.png) |
+|      ``up``      | ![1686604859851](image/README/1686604859851.png) |
+|     ``down``     | ![1686604868138](image/README/1686604868138.png) |
 
 Each of the colored regions represents an area where the respective entity can be instantiated. Blue regions are starting regions, yellow regions represent goal regions and in the case of precision farming, if a goal region is not generated in the yellow region then changes to a static obstacle region but this is not the case for disaster response, instead the region where the goal was not instantiated does not impact the episode at all, the light red regions represent static obstacles, and dark red regions represent dynamic obstacles.
 
