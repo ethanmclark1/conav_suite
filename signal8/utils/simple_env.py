@@ -60,7 +60,6 @@ class SimpleEnv(AECEnv):
         self._agent_selector = agent_selector(self.agents)
 
         # set spaces
-        state_dim = 0
         self.action_spaces = dict()
         self.observation_spaces = dict()
         
@@ -74,8 +73,9 @@ class SimpleEnv(AECEnv):
                 shape=(obs_dim,),
                 dtype=np.float32,
             )
-            state_dim += obs_dim
-            
+        
+        # state space is used by aerial agent, encodes agents and large obstacles
+        state_dim = len(world.agents) * 2 + len(world.large_obstacles) * 2
         self.state_space = spaces.Box(
             low=-np.float32(1),
             high=+np.float32(1),
@@ -100,13 +100,20 @@ class SimpleEnv(AECEnv):
         ).astype(np.float32)
         
     def state(self):
-        states = tuple(
-            self.scenario.observation(
-                self.world.agents[self._index_map[agent]], self.world
-            ).astype(np.float32)
-            for agent in self.possible_agents
-        )
-        return np.concatenate(states, axis=None)
+        if self.steps > 0:
+            raise Exception('The state of the system can only be retrieved at the start of an episode before any steps have been taken.')
+        
+        state = np.zeros(self.state_space.shape)
+        
+        for i, agent in enumerate(self.world.agents):
+            state[2*i : 2*i+2] = agent.state.p_pos
+
+        # Calculate the starting index for the obstacles in the state array
+        start_idx = 2 * len(self.world.agents)
+        for i, obstacle in enumerate(self.world.large_obstacles):
+            state[start_idx + 2*i : start_idx + 2*i+2] = obstacle.state.p_pos
+             
+        return np.concatenate(state, axis=None)
 
     def reset(self, seed=None, return_info=False, options=None):        
         if seed is not None:
@@ -196,22 +203,26 @@ class SimpleEnv(AECEnv):
         # make sure we used all elements of action
         assert len(action) == 0
     
-    # TODO: Account for large and small obstacles
     # Check if episode is terminated or truncated
-    def _episode_status(self):        
-        static_obs = [obs for obs in self.world.obstacles if not obs.movable]
-
+    def _episode_status(self):    
         goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal_a.size
-        static_obs_threshold = self.world.agents[0].size + static_obs[0].size
+        small_obs_threshold = self.world.agents[0].size + self.world.small_obstacles[0].size
+        large_obs_threshold = self.world.agents[0].size + self.world.large_obstacles[0].size
+        
+        small_obstacles = [obs for obs in self.world.small_obstacles]
+        large_obstacles = [obs for obs in self.world.large_obstacles]    
 
         goal_a_dist = [np.linalg.norm(agent.state.p_pos - agent.goal_a.state.p_pos) for agent in self.world.agents]
         goal_b_dist = [np.linalg.norm(agent.state.p_pos - agent.goal_b.state.p_pos) for agent in self.world.agents]
-        static_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in static_obs)
-                           for agent in self.world.agents]
+        small_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in small_obstacles)
+                          for agent in self.world.agents]
+        large_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in large_obstacles)
+                          for agent in self.world.agents]
 
-        crossed_threshold_static = [dist <= static_obs_threshold for dist in static_obs_dist]
+        crossed_threshold_small = [dist <= small_obs_threshold for dist in small_obs_dist]
+        crossed_threshold_large = [dist <= large_obs_threshold for dist in large_obs_dist]
         
-        truncations = [crossed_stat for crossed_stat in crossed_threshold_static]
+        truncations = [(crossed_small or crossed_large) for crossed_small, crossed_large in zip(crossed_threshold_small, crossed_threshold_large)]
         truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
 
         terminations = [False] * self.num_agents
@@ -222,7 +233,6 @@ class SimpleEnv(AECEnv):
         for i, dist in enumerate(goal_b_dist):
             if self.world.agents[i].reached_goal:
                 if dist <= goal_dist_threshold:
-                    self.agents[i].reached_safety = True
                     terminations[i] = True
 
         return {'terminations': terminations, 'truncations': truncations}
