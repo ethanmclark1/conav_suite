@@ -60,7 +60,6 @@ class Agent(Entity):  # properties of agent entities
         self.reached_goal = False
         # reached start state after reaching goal
         self.goal_b = None
-        self.returned_to_safety = False
         # state
         self.state = AgentState()
         # action

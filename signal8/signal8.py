@@ -3,11 +3,10 @@ import numpy as np
 import matplotlib.path as mpath
 
 from functools import partial
-# TODO
-from utils.scenario import BaseScenario
-from utils.simple_env import SimpleEnv, make_env
-from utils.core import Agent, Goal, Obstacle, World
-from utils.problems import get_problem_list, get_problem_instance
+from .utils.scenario import BaseScenario
+from .utils.simple_env import SimpleEnv, make_env
+from .utils.core import Agent, Goal, Obstacle, World
+from .utils.problems import get_problem_list, get_problem_instance
 
 from gymnasium.utils import EzPickle
 
@@ -15,7 +14,7 @@ from gymnasium.utils import EzPickle
 class raw_env(SimpleEnv, EzPickle):
     def __init__(
         self, 
-        num_agents=2, 
+        num_agents=1, 
         num_large_obstacles=4, 
         num_small_obstacles=10, 
         render_mode=None
@@ -166,12 +165,31 @@ class Scenario(BaseScenario):
             else:                
                 large_obstacle.state.p_pos = np_random.uniform(*zip(*world.instance_constr[idx]))
     
-    # TODO
     # Reset all small obstacles to a position that does not intersect with the agents or the large obstacles
     def _reset_small_obstacles(self, world, np_random, paths):
-        epsilon = world.buffer_dist
-                                            
-                        
+        epsilon = world.small_obstacles[0].size + world.large_obstacles[0].size
+        
+        x_constraints = [constr[0] for constr in world.instance_constr]
+        y_constraints = [constr[1] for constr in world.instance_constr]
+        agent_positions = [agent.state.p_pos for agent in world.agents]
+        goal_positions = [goal.state.p_pos for goal in world.goals]
+        large_obstacle_positions = [obstacle.state.p_pos for obstacle in world.large_obstacles]
+        
+        def safe_position(point):
+            if world.problem_instance == 'corners':
+                within_obstacle_constraints = any(path.contains_points(point[None, :]) for path in paths)
+            else:
+                within_obstacle_constraints = any(low - epsilon <= point[0] <= high + epsilon for low, high in x_constraints) \
+                    or any(low - epsilon <= point[1] <= high + epsilon for low, high in y_constraints)
+
+            within_other_positions = any(np.linalg.norm(point - pos) <= epsilon for pos in agent_positions + goal_positions + large_obstacle_positions)
+
+            return not (within_obstacle_constraints or within_other_positions)
+        
+        for small_obstacle in world.small_obstacles:
+            small_obstacle.state.p_vel = np.zeros(world.dim_p)
+            small_obstacle.state.p_pos = self._generate_position(np_random, safe_position)
+
     def reset_world(self, world, np_random, problem_instance):
         self._set_problem_instance(world, problem_instance)
         
@@ -186,19 +204,33 @@ class Scenario(BaseScenario):
     def reward(self, agent, world):
         return 0
     
-    # TODO: Account for large and small obstacles
+    # Ground agents can only observe the positions of other agents, goals, and small obstacles
     def observation(self, agent, world):
         agent_pos = agent.state.p_pos
         agent_vel = agent.state.p_vel
         
-        num_large_obstacles = len(world.obstacles)
+        num_agents = len(world.agents)
+        num_small_obstacles = len(world.small_obstacles)
         max_observable_dist = agent.max_observable_dist
         
-        observed_obstacles = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_large_obstacles)]
+        observed_agents = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_agents - 1)]
         observed_goal = np.full_like(agent_pos, max_observable_dist)
+        observed_obstacles = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_small_obstacles)]
         
-        for i, obstacle in enumerate(world.obstacles):
-            obs_pos = obstacle.state.p_pos
+        idx = 0
+        for other_agent in world.agents:
+            if agent.name == other_agent.name:
+                continue
+            else:
+                other_agent_pos = other_agent.state.p_pos
+                relative_pos = other_agent_pos - agent_pos
+                dist = np.linalg.norm(relative_pos)
+                if dist <= max_observable_dist:
+                    observed_agents[idx] = relative_pos
+                idx += 1
+        
+        for i, small_obstacle in enumerate(world.small_obstacles):
+            obs_pos = small_obstacle.state.p_pos
             relative_pos = obs_pos - agent_pos
             dist = np.linalg.norm(relative_pos)
             if dist <= max_observable_dist:
