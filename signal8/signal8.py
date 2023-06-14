@@ -50,18 +50,10 @@ class Scenario(BaseScenario):
             agent.color = np.array([1, 0.95, 0.8])
             world.agents.append(agent)
         
-        # Agents has two goals (i.e., actual goal and start position)
-        # This is to ensure agent returns safely to start position after reaching goal
-        for i in range(num_agents*2):
             goal = Goal()
             goal.name = f"goal_{i}"
             goal.collide = False
-            # goal_a is the actual goal
-            if i < num_agents:
-                goal.color = np.array([0.835, 0.90, 0.831])
-            # goal_b is the start position to return to after reaching goal
-            else:
-                goal.color = np.array([0.85, 0.90, 0.99])
+            goal.color = np.array([0.835, 0.90, 0.831])
             world.goals.append(goal)
         
         # Large obstacles can only be observed by aerial agent
@@ -118,12 +110,10 @@ class Scenario(BaseScenario):
             y_constraints = [constr[1] for constr in world.instance_constr]
 
         for i, agent in enumerate(world.agents):
-            agent.goal_a = world.goals[i]
-            agent.goal_b = world.goals[len(world.goals) - 1 - i]
+            agent.goal = world.goals[i]
 
             agent.state.p_vel = np.zeros(world.dim_p)
-            agent.goal_a.state.p_vel = np.zeros(world.dim_p)
-            agent.goal_b.state.p_vel = np.zeros(world.dim_p)
+            agent.goal.state.p_vel = np.zeros(world.dim_p)
 
             if world.problem_instance == 'corners':
                 condition = partial(
@@ -140,8 +130,7 @@ class Scenario(BaseScenario):
                     )
 
             agent.state.p_pos = self._generate_position(np_random, condition)
-            agent.goal_a.state.p_pos = self._generate_position(np_random, condition)
-            agent.goal_b.state.p_pos = copy.copy(agent.state.p_pos)
+            agent.goal.state.p_pos = self._generate_position(np_random, condition)
     
     # Reset all large obstacles to a position that does not intersect with the agents
     def _reset_large_obstacles(self, world, np_random, paths):
@@ -236,7 +225,7 @@ class Scenario(BaseScenario):
             if dist <= max_observable_dist:
                 observed_obstacles[i] = relative_pos
                 
-        goal_pos = agent.goal_b.state.p_pos if agent.reached_goal else agent.goal_a.state.p_pos
+        goal_pos = agent.goal.state.p_pos
         relative_goal_pos = goal_pos - agent_pos
         goal_dist = np.linalg.norm(relative_goal_pos)
         if goal_dist <= max_observable_dist:

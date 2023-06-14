@@ -55,11 +55,8 @@ class Agent(Entity):  # properties of agent entities
         super().__init__()
         # agents are movable by default
         self.movable = True
-        # reached goal state
-        self.goal_a = None
-        self.reached_goal = False
-        # reached start state after reaching goal
-        self.goal_b = None
+        # goal entity
+        self.goal = None
         # state
         self.state = AgentState()
         # action

@@ -114,7 +114,7 @@ class SimpleEnv(AECEnv):
         
         start_idx = 2 * len(self.world.agents) + 2 * len(self.world.large_obstacles)
         for i, agent in enumerate(self.world.agents):
-            state[start_idx + 2*i : start_idx + 2*i+2] = agent.goal_a.state.p_pos
+            state[start_idx + 2*i : start_idx + 2*i+2] = agent.goal.state.p_pos
              
         return np.concatenate(state, axis=None)
 
@@ -144,17 +144,6 @@ class SimpleEnv(AECEnv):
         self.steps = 0
 
         self.current_actions = [None] * len(self.world.agents)
-    
-    def get_start_state(self):
-        if not self._reset_called:
-            raise Exception("Cannot get start state without calling reset() first")
-        
-        agent_pos = np.array([agent.state.p_pos for agent in self.world.agents])
-        goal_pos = np.array([(agent.goal_a.state.p_pos, agent.goal_b.state.p_pos) for agent in self.world.agents])
-        obs_pos = np.array([obs.state.p_pos for obs in self.world.large_obstacles])
-        
-        entities = {'agents': agent_pos, 'goals': goal_pos, 'obstacles': obs_pos}
-        return entities
         
     def _execute_world_step(self):
         # set action for each agent
@@ -208,15 +197,14 @@ class SimpleEnv(AECEnv):
     
     # Check if episode is terminated or truncated
     def _episode_status(self):    
-        goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal_a.size
+        goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal.size
         small_obs_threshold = self.world.agents[0].size + self.world.small_obstacles[0].size
         large_obs_threshold = self.world.agents[0].size + self.world.large_obstacles[0].size
         
         small_obstacles = [obs for obs in self.world.small_obstacles]
         large_obstacles = [obs for obs in self.world.large_obstacles]    
 
-        goal_a_dist = [np.linalg.norm(agent.state.p_pos - agent.goal_a.state.p_pos) for agent in self.world.agents]
-        goal_b_dist = [np.linalg.norm(agent.state.p_pos - agent.goal_b.state.p_pos) for agent in self.world.agents]
+        goal_dist = [np.linalg.norm(agent.state.p_pos - agent.goal.state.p_pos) for agent in self.world.agents]
         small_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in small_obstacles)
                           for agent in self.world.agents]
         large_obs_dist = [min(np.linalg.norm(agent.state.p_pos - obs.state.p_pos) for obs in large_obstacles)
@@ -229,14 +217,9 @@ class SimpleEnv(AECEnv):
         truncations = [True] * self.num_agents if self.steps >= self.max_cycles else truncations
 
         terminations = [False] * self.num_agents
-        for i, dist in enumerate(goal_a_dist):
+        for i, dist in enumerate(goal_dist):
             if dist <= goal_dist_threshold:
-                self.world.agents[i].reached_goal = True
-
-        for i, dist in enumerate(goal_b_dist):
-            if self.world.agents[i].reached_goal:
-                if dist <= goal_dist_threshold:
-                    terminations[i] = True
+                self.terminations[i] = True
 
         return {'terminations': terminations, 'truncations': truncations}
 
