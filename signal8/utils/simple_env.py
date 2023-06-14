@@ -74,8 +74,8 @@ class SimpleEnv(AECEnv):
                 dtype=np.float32,
             )
         
-        # state space is used by aerial agent, encodes agents and large obstacles
-        state_dim = len(world.agents) * 2 + len(world.large_obstacles) * 2
+        # state space is used by aerial agent; it encodes the positions of all agents, obstacles, and goals
+        state_dim = len(world.agents) * 2 + len(world.large_obstacles) * 2 + len(world.agents) * 2
         self.state_space = spaces.Box(
             low=-np.float32(1),
             high=+np.float32(1),
@@ -108,10 +108,13 @@ class SimpleEnv(AECEnv):
         for i, agent in enumerate(self.world.agents):
             state[2*i : 2*i+2] = agent.state.p_pos
 
-        # Calculate the starting index for the obstacles in the state array
         start_idx = 2 * len(self.world.agents)
         for i, obstacle in enumerate(self.world.large_obstacles):
             state[start_idx + 2*i : start_idx + 2*i+2] = obstacle.state.p_pos
+        
+        start_idx = 2 * len(self.world.agents) + 2 * len(self.world.large_obstacles)
+        for i, agent in enumerate(self.world.agents):
+            state[start_idx + 2*i : start_idx + 2*i+2] = agent.goal_a.state.p_pos
              
         return np.concatenate(state, axis=None)
 
