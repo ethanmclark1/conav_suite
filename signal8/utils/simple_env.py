@@ -219,10 +219,9 @@ class SimpleEnv(AECEnv):
         terminations = [False] * self.num_agents
         for i, dist in enumerate(goal_dist):
             if dist <= goal_dist_threshold:
-                self.terminations[i] = True
+                terminations[i] = True
 
         return {'terminations': terminations, 'truncations': truncations}
-
 
     def step(self, action):
         if (
@@ -241,8 +240,9 @@ class SimpleEnv(AECEnv):
             self.steps += 1
             self._execute_world_step()
             status = self._episode_status()
-            self.terminations = status['terminations']
-            self.truncations = status['truncations']
+            for idx, agent in enumerate(self._index_map.keys()):
+                self.terminations[agent] = status['terminations'][idx]
+                self.truncations[agent] = status['truncations'][idx]  
 
         if self.render_mode == "human":
             self.render()
