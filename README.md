@@ -37,16 +37,16 @@ env.close()
 
 ## List of Problem Instances
 
-| Problem Instance |                 Visualization                 |
-| :--------------: | :--------------------------------------------: |
-|  ``corners``   | ![1686604788813](image/README/1686604788813.png) |
-|   ``quarters``   | ![1686604799335](image/README/1686604799335.png) |
-|    ``cross``    | ![1686604808540](image/README/1686604808540.png) |
-|    ``circle``    | ![1687209049891](image/README/1687209049891.png) |
-|     ``left``     | ![1686604845732](image/README/1686604845732.png) |
-|    ``right``    | ![1686604851758](image/README/1686604851758.png) |
-|      ``up``      | ![1686604859851](image/README/1686604859851.png) |
-|     ``down``     | ![1686604868138](image/README/1686604868138.png) |
+|      Problem Instance      |                 Visualization                 |
+| :-------------------------: | :--------------------------------------------: |
+| ``einstein tile (the hat)`` | ![1687297311148](image/README/1687297311148.png) |
+|         ``balbus``         | ![1687297455666](image/README/1687297455666.png) |
+|        ``corners``         | ![1686604788813](image/README/1686604788813.png) |
+|        ``quarters``        | ![1686604799335](image/README/1686604799335.png) |
+|          ``cross``          | ![1686604808540](image/README/1686604808540.png) |
+|         ``circle``         | ![1687209049891](image/README/1687209049891.png) |
+|          ``left``          | ![1686604845732](image/README/1686604845732.png) |
+|          ``right``          | ![1686604851758](image/README/1686604851758.png) |
 
 Each of the colored regions represents an area where the respective entity can be instantiated. Blue regions are starting regions, yellow regions represent goal regions and in the case of precision farming, if a goal region is not generated in the yellow region then changes to a static obstacle region but this is not the case for disaster response, instead the region where the goal was not instantiated does not impact the episode at all, the light red regions represent static obstacles, and dark red regions represent dynamic obstacles.
 
