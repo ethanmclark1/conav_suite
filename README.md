@@ -37,16 +37,16 @@ env.close()
 
 ## List of Problem Instances
 
-|      Problem Instance      |                 Visualization                 |
-| :-------------------------: | :--------------------------------------------: |
-| ``einstein tile (the hat)`` | ![1687297311148](image/README/1687297311148.png) |
-|         ``balbus``         | ![1687297455666](image/README/1687297455666.png) |
-|        ``corners``         | ![1686604788813](image/README/1686604788813.png) |
-|        ``quarters``        | ![1686604799335](image/README/1686604799335.png) |
-|          ``cross``          | ![1686604808540](image/README/1686604808540.png) |
-|         ``circle``         | ![1687209049891](image/README/1687209049891.png) |
-|          ``left``          | ![1686604845732](image/README/1686604845732.png) |
-|          ``right``          | ![1686604851758](image/README/1686604851758.png) |
+| Problem Instance |                 Visualization                 |
+| :---------------: | :--------------------------------------------: |
+| ``einstein tile`` | ![1687297311148](image/README/1687297311148.png) |
+|    ``balbis``    | ![1687297455666](image/README/1687297455666.png) |
+|   ``corners``    | ![1686604788813](image/README/1686604788813.png) |
+|   ``quarters``   | ![1686604799335](image/README/1686604799335.png) |
+|     ``cross``     | ![1686604808540](image/README/1686604808540.png) |
+|    ``circle``    | ![1687209049891](image/README/1687209049891.png) |
+|     ``left``     | ![1686604845732](image/README/1686604845732.png) |
+|     ``right``     | ![1686604851758](image/README/1686604851758.png) |
 
 The red zones denote regions where large obstacles can be spawned, while the remaining space (indicated in white) designates areas eligible for agent deployment, goal placement, and generation of small obstacles.
 

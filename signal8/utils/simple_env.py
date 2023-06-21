@@ -109,12 +109,12 @@ class SimpleEnv(AECEnv):
             state[2*i : 2*i+2] = agent.state.p_pos
 
         start_idx = 2 * len(self.world.agents)
-        for i, obstacle in enumerate(self.world.large_obstacles):
-            state[start_idx + 2*i : start_idx + 2*i+2] = obstacle.state.p_pos
-        
-        start_idx = 2 * len(self.world.agents) + 2 * len(self.world.large_obstacles)
         for i, agent in enumerate(self.world.agents):
             state[start_idx + 2*i : start_idx + 2*i+2] = agent.goal.state.p_pos
+        
+        start_idx = 4 * len(self.world.agents)
+        for i, obstacle in enumerate(self.world.large_obstacles):
+            state[start_idx + 2*i : start_idx + 2*i+2] = obstacle.state.p_pos
              
         return np.concatenate(state, axis=None)
 
