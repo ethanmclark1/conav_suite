@@ -103,16 +103,19 @@ class Scenario(BaseScenario):
     def _outside_circle(self, point, center, radius, epsilon):
         return np.linalg.norm(point - center) > radius + epsilon
     
-    # Check if point is outside of rectangular obstacle regions
     def _outside_rectangle(self, point, x_constraints, y_constraints, epsilon):
-        return all(not (low - epsilon <= point[0] <= high + epsilon) for low, high in x_constraints) \
-            and all(not (low - epsilon <= point[1] <= high + epsilon) for low, high in y_constraints)
+        within_constraints = any(
+            (low_x - epsilon <= point[0] <= high_x + epsilon) and (low_y - epsilon <= point[1] <= high_y + epsilon)
+            for (low_x, high_x), (low_y, high_y) in zip(x_constraints, y_constraints)
+        )
+        return not within_constraints
+
     
     # Reset agents and goals to their initial positions
     def _reset_agents_and_goals(self, world, np_random, paths):
         epsilon = world.buffer_dist
         
-        if world.problem_instance not in ['corners', 'circle']:
+        if world.problem_instance not in ['corners', 'einstein_tile', 'circle']:
             x_constraints = [constr[0] for constr in world.instance_constr]
             y_constraints = [constr[1] for constr in world.instance_constr]
 
@@ -122,7 +125,7 @@ class Scenario(BaseScenario):
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.goal.state.p_vel = np.zeros(world.dim_p)
 
-            if world.problem_instance == 'corners':
+            if world.problem_instance in ['corners', 'einstein_tile']:
                 condition = partial(
                     self._outside_triangle, 
                     paths=paths, 
@@ -163,7 +166,7 @@ class Scenario(BaseScenario):
             idx = i % len(world.instance_constr)
             
             # Each corner may only have one large_obstacle in it
-            if world.problem_instance == 'corners':
+            if world.problem_instance in ['corners', 'einstein_tile']:
                 while True:
                     pos = self._generate_position(np_random, inside_triangle_condition)
                     triangle_idx = next((i for i, path in enumerate(paths) if path.contains_points(pos[None, :])), None)
@@ -186,7 +189,7 @@ class Scenario(BaseScenario):
         def safe_position(point):
             within_other_positions = any(np.linalg.norm(point - pos) <= epsilon for pos in agent_positions + goal_positions + large_obstacle_positions)
 
-            if world.problem_instance == 'corners':
+            if world.problem_instance in ['corners', 'einstein_tile']:
                 within_obstacle_constraints = any(path.contains_points(point[None, :]) for path in paths)
             elif world.problem_instance == 'circle':
                 center = world.instance_constr[0][0]
@@ -195,8 +198,8 @@ class Scenario(BaseScenario):
             else:
                 x_constraints = [constr[0] for constr in world.instance_constr]
                 y_constraints = [constr[1] for constr in world.instance_constr]
-                within_obstacle_constraints = any(low - epsilon <= point[0] <= high + epsilon for low, high in x_constraints) \
-                    or any(low - epsilon <= point[1] <= high + epsilon for low, high in y_constraints)
+                outside_rectangle = self._outside_rectangle(point, x_constraints, y_constraints, epsilon)
+                within_obstacle_constraints = not outside_rectangle
 
             return not (within_obstacle_constraints or within_other_positions)
 
@@ -208,7 +211,7 @@ class Scenario(BaseScenario):
         self._set_problem_instance(world, problem_instance)
         
         paths = [mpath.Path(np.array(triangle)) for triangle in world.instance_constr] \
-            if world.problem_instance == 'corners' else None
+            if world.problem_instance in ['corners', 'einstein_tile'] else None
             
         self._reset_agents_and_goals(world, np_random, paths)
         self._reset_large_obstacles(world, np_random, paths)
