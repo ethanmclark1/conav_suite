@@ -52,7 +52,7 @@ class SimpleEnv(AECEnv):
         self.world = world
         self.local_ratio = local_ratio
 
-        self.scenario.reset_world(self.world, self.np_random, 'left')
+        self.scenario.reset_world(self.world, self.np_random, 'bisect')
         self.agents = [agent.name for agent in self.world.agents]
         self.possible_agents = self.agents[:]
         self._index_map = {agent.name: idx for idx, agent in enumerate(self.world.agents)}
