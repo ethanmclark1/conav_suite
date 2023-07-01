@@ -39,14 +39,14 @@ env.close()
 
 | Problem Instance |                 Visualization                 |
 | :---------------: | :--------------------------------------------: |
-| ``einstein tile`` | ![1687297311148](image/README/1687297311148.png) |
-|    ``balbis``    | ![1687297455666](image/README/1687297455666.png) |
+|    ``bisect``    | ![1688231528499](image/README/1688231528499.png) |
+|    ``circle``    | ![1688231542146](image/README/1688231542146.png) |
 |   ``corners``    | ![1686604788813](image/README/1686604788813.png) |
-|   ``quarters``   | ![1686604799335](image/README/1686604799335.png) |
 |     ``cross``     | ![1686604808540](image/README/1686604808540.png) |
-|    ``circle``    | ![1687209049891](image/README/1687209049891.png) |
-|     ``left``     | ![1686604845732](image/README/1686604845732.png) |
-|     ``right``     | ![1686604851758](image/README/1686604851758.png) |
+| ``einstein_tile`` | ![1688231581499](image/README/1688231581499.png) |
+|   ``quarters``   | ![1688231597856](image/README/1688231597856.png) |
+| ``solar_system`` | ![1688231626872](image/README/1688231626872.png) |
+| ``right_arrows`` | ![1688231657789](image/README/1688231657789.png) |
 
 The red zones denote regions where large obstacles can be spawned, while the remaining space (indicated in white) designates areas eligible for agent deployment, goal placement, and generation of small obstacles.
 
