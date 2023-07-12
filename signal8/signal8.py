@@ -79,14 +79,9 @@ class Scenario(BaseScenario):
         world.instance_constr = instance_constr
     
     # Generate valid points according to some condition
-    def _generate_position(self, np_random, condition, circle=False, bounds=(-1, 1)):
+    def _generate_position(self, np_random, condition):
         while True:
-            if circle:
-                theta = np_random.uniform(0, 2*np.pi)
-                r = 0.5 * np.sqrt(np_random.uniform(0, 1))
-                point = np.array([r * np.cos(theta), r * np.sin(theta)])
-            else:
-                point = np_random.uniform(bounds[0], bounds[1], 2)  # use the bounds here
+            point = np_random.uniform(-1, +1, 2)
             if condition(point):
                 break
         return point
@@ -150,31 +145,29 @@ class Scenario(BaseScenario):
             agent.state.p_pos = self._generate_position(np_random, condition)
             agent.goal.state.p_pos = self._generate_position(np_random, condition)
     
-    # Reset all large obstacles to a position that does not intersect with the agents and is within its shape                
+    # Reset all large obstacles to a position that does not intersect with the agents and is within its shape
     def _reset_large_obstacles(self, world, np_random, paths):
         def inside_shape_condition(point):
             return any(path.contains_points(point[None, :]) for path in paths)    
-
+        
         occupied = set()
         num_shapes = len(world.instance_constr)
-        circle = True if world.problem_instance in ['circle', 'solar_system'] else False    
-        radius = world.large_obstacles[0].size  # get the radius of the obstacle
-
+        
         for i, large_obstacle in enumerate(world.large_obstacles):            
             large_obstacle.state.p_vel = np.zeros(world.dim_p)
-
+            
             while True:
-                pos = self._generate_position(np_random, inside_shape_condition, circle=circle, bounds=(-1+radius, 1-radius))  # adjust the bounds here
+                pos = self._generate_position(np_random, inside_shape_condition)
                 shape_idx = next((i for i, path in enumerate(paths) if path.contains_points(pos[None, :])), None)
-
+                
                 if i % num_shapes == 0:
                     occupied.clear()
-
+                
                 if shape_idx not in occupied:
                     large_obstacle.state.p_pos = pos
                     occupied.add(shape_idx)
                     break
-
+    
     def _reset_small_obstacles(self, world, np_random, paths):
         epsilon = world.small_obstacles[0].size + world.large_obstacles[0].size
 
