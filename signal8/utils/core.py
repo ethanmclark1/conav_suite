@@ -91,7 +91,7 @@ class World:  # multi-agent world
     # return all entities in the world
     @property
     def entities(self):
-        return self.agents + self.goals + self.large_obstacles
+        return self.agents + self.goals + self.large_obstacles + self.small_obstacles
 
     # update state of the world
     def step(self):

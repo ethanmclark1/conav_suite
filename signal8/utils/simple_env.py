@@ -9,8 +9,8 @@ from pettingzoo.utils import wrappers
 from pettingzoo.utils.agent_selector import agent_selector
 
 def make_env(raw_env):
-    def env(*args):
-        env = raw_env(*args)
+    def env(**kwargs):
+        env = raw_env(**kwargs)
         env = wrappers.AssertOutOfBoundsWrapper(env)
         env = wrappers.OrderEnforcingWrapper(env)
         return env

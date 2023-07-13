@@ -64,7 +64,7 @@ class Scenario(BaseScenario):
         
         # Small obstacles can only be observed by ground agent(s)
         for i in range(num_small_obstacles):
-            obstacle = Obstacle(size=0.01)
+            obstacle = Obstacle(size=0.02)
             obstacle.name = f"obs_{i}"
             obstacle.color = np.array([0.97, 0.801, 0.8])
             world.small_obstacles.append(obstacle)    
