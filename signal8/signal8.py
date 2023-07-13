@@ -16,7 +16,8 @@ class raw_env(SimpleEnv, EzPickle):
         num_agents=1, 
         num_large_obstacles=4, 
         num_small_obstacles=10, 
-        render_mode=None
+        render_mode=None,
+        max_cycles=500,
         ):
         
         if num_agents > 2:
@@ -32,7 +33,7 @@ class raw_env(SimpleEnv, EzPickle):
             scenario=scenario, 
             world=world, 
             render_mode=render_mode,
-            max_cycles=500, 
+            max_cycles=max_cycles, 
         )
         
 env = make_env(raw_env)
