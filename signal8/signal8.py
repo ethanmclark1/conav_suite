@@ -20,8 +20,8 @@ class raw_env(SimpleEnv, EzPickle):
         max_cycles=500,
         ):
         
-        if num_agents > 2:
-            raise ValueError("Signal8 currently can only support up to 2 agents.")
+        if num_agents > 1:
+            raise ValueError("Signal8 currently can only support up to 1 agent.")
         
         if num_large_obstacles > 16:
             raise ValueError("Signal8 has a maximum of 10 large obstacles.")
@@ -235,11 +235,9 @@ class Scenario(BaseScenario):
         
         num_agents = len(world.agents)
         num_small_obstacles = len(world.small_obstacles)
-        max_observable_dist = agent.max_observable_dist
         
-        observed_agents = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_agents - 1)]
-        observed_goal = np.full_like(agent_pos, max_observable_dist)
-        observed_obstacles = [np.full_like(agent_pos, max_observable_dist) for _ in range(num_small_obstacles)]
+        observed_agents = [np.zeros_like(agent_pos) for _ in range(num_agents - 1)]
+        observed_obstacles = [np.zeros_like(agent_pos) for _ in range(num_small_obstacles)]
         
         idx = 0
         for other_agent in world.agents:
@@ -248,23 +246,18 @@ class Scenario(BaseScenario):
             else:
                 other_agent_pos = other_agent.state.p_pos
                 relative_pos = other_agent_pos - agent_pos
-                dist = np.linalg.norm(relative_pos)
-                if dist <= max_observable_dist:
-                    observed_agents[idx] = relative_pos
+                observed_agents[idx] = relative_pos
                 idx += 1
         
         for i, small_obstacle in enumerate(world.small_obstacles):
             obs_pos = small_obstacle.state.p_pos
             relative_pos = obs_pos - agent_pos
-            dist = np.linalg.norm(relative_pos)
-            if dist <= max_observable_dist:
-                observed_obstacles[i] = relative_pos
+            observed_obstacles[i] = relative_pos
                 
         goal_pos = agent.goal.state.p_pos
-        relative_goal_pos = goal_pos - agent_pos
-        goal_dist = np.linalg.norm(relative_goal_pos)
+        observed_goal = goal_pos - agent_pos
         
-        return np.concatenate((agent_pos, np.concatenate(observed_obstacles, axis=0), observed_goal))
+        return np.concatenate((agent_pos, observed_goal, np.concatenate(observed_obstacles, axis=0)))
         
     # Reward given by agents to agents for reaching their respective goals
     def reward(self, agent, world):

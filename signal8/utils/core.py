@@ -61,8 +61,7 @@ class Agent(Entity):  # properties of agent entities
         self.state = AgentState()
         # action
         self.action = None
-        # how far the agent can sense around itself
-        self.max_observable_dist = 0.30
+        
 
 class World:  # multi-agent world
     def __init__(self):
