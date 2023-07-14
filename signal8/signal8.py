@@ -263,8 +263,6 @@ class Scenario(BaseScenario):
         goal_pos = agent.goal.state.p_pos
         relative_goal_pos = goal_pos - agent_pos
         goal_dist = np.linalg.norm(relative_goal_pos)
-        if goal_dist <= max_observable_dist:
-            observed_goal = relative_goal_pos
         
         return np.concatenate((agent_pos, np.concatenate(observed_obstacles, axis=0), observed_goal))
         
