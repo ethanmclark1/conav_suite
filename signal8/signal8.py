@@ -24,7 +24,7 @@ class raw_env(SimpleEnv, EzPickle):
             raise ValueError("Signal8 currently can only support up to 1 agent.")
         
         if num_large_obstacles > 16:
-            raise ValueError("Signal8 has a maximum of 10 large obstacles.")
+            raise ValueError("Signal8 has a maximum of 16 large obstacles.")
         
         scenario = Scenario()
         world = scenario.make_world(num_agents, num_large_obstacles, num_small_obstacles)
@@ -236,8 +236,8 @@ class Scenario(BaseScenario):
         num_agents = len(world.agents)
         num_small_obstacles = len(world.small_obstacles)
         
-        observed_agents = [np.zeros_like(agent_pos) for _ in range(num_agents - 1)]
-        observed_obstacles = [np.zeros_like(agent_pos) for _ in range(num_small_obstacles)]
+        other_agents = [np.zeros_like(agent_pos) for _ in range(num_agents - 1)]
+        obstacles = [np.zeros_like(agent_pos) for _ in range(num_small_obstacles)]
         
         idx = 0
         for other_agent in world.agents:
@@ -246,18 +246,16 @@ class Scenario(BaseScenario):
             else:
                 other_agent_pos = other_agent.state.p_pos
                 relative_pos = other_agent_pos - agent_pos
-                observed_agents[idx] = relative_pos
+                other_agents[idx] = relative_pos
                 idx += 1
         
         for i, small_obstacle in enumerate(world.small_obstacles):
             obs_pos = small_obstacle.state.p_pos
-            relative_pos = obs_pos - agent_pos
-            observed_obstacles[i] = relative_pos
+            obstacles[i] = obs_pos
                 
         goal_pos = agent.goal.state.p_pos
-        observed_goal = goal_pos - agent_pos
         
-        return np.concatenate((agent_pos, observed_goal, np.concatenate(observed_obstacles, axis=0)))
+        return np.concatenate((agent_pos, goal_pos, other_agents, np.concatenate(obstacles, axis=0)))
         
     # Reward given by agents to agents for reaching their respective goals
     def reward(self, agent, world):
