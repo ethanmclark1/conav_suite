@@ -1,7 +1,7 @@
 # Constraints on obstacle positions
 problems = {
     'bisect': [
-        ((-1, 0), (-1, 1))
+        ((-1, -0.1), (-1, 1))
         ],
     'circle':  [
         ((0, 0), (0.5)),

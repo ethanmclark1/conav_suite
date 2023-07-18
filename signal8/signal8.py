@@ -244,14 +244,11 @@ class Scenario(BaseScenario):
             if agent.name == other_agent.name:
                 continue
             else:
-                other_agent_pos = other_agent.state.p_pos
-                relative_pos = other_agent_pos - agent_pos
-                other_agents[idx] = relative_pos
+                other_agents[idx] = other_agent.state.p_pos
                 idx += 1
         
         for i, small_obstacle in enumerate(world.small_obstacles):
-            obs_pos = small_obstacle.state.p_pos
-            obstacles[i] = obs_pos
+            obstacles[i] = small_obstacle.state.p_pos
                 
         goal_pos = agent.goal.state.p_pos
         
