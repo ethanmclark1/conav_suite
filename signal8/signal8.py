@@ -17,14 +17,11 @@ class raw_env(SimpleEnv, EzPickle):
         num_large_obstacles=4, 
         num_small_obstacles=10, 
         render_mode=None,
-        max_cycles=500,
+        max_cycles=100,
         ):
         
-        if num_agents > 1:
-            raise ValueError("Signal8 currently can only support up to 1 agent.")
-        
-        if num_large_obstacles > 16:
-            raise ValueError("Signal8 has a maximum of 16 large obstacles.")
+        if num_large_obstacles > 10:
+            raise ValueError("Signal8 has a maximum of 10 large obstacles.")
         
         scenario = Scenario()
         world = scenario.make_world(num_agents, num_large_obstacles, num_small_obstacles)
