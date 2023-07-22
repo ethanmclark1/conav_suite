@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="Signal8",
-    version="4.98",
+    version="4.99",
     packages=find_packages(),
     author="Ethan Clark",
     author_email="eclark715@gmail.com.com",
