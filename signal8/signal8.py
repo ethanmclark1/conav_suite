@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.path as mpath
 
 from functools import partial
-from .utils.scenario import BaseScenario
-from .utils.simple_env import SimpleEnv, make_env
-from .utils.core import Agent, Goal, Obstacle, World
-from .utils.problems import get_problem_list, get_problem_instance
+from utils.scenario import BaseScenario
+from utils.simple_env import SimpleEnv, make_env
+from utils.core import Agent, Goal, Obstacle, World
+from utils.problems import get_problem_list, get_problem_instance
 
 from gymnasium.utils import EzPickle
 
@@ -88,10 +88,10 @@ class Scenario(BaseScenario):
     def _outside_triangle(self, point, paths, epsilon):
         enlarged_paths = []
         for path in paths:
-            centroid = np.mean(path.vertices[:-1], axis=0)
+            centroid = np.mean(path.vertices, axis=0)
             enlarged_vertices = path.vertices + epsilon * (path.vertices - centroid)
             enlarged_paths.append(mpath.Path(enlarged_vertices))
-        return not any(path.contains_points(point[None, :]) for path in enlarged_paths)
+        return not any(path.contains_points(point) for path in enlarged_paths)
     
     # Check if point is outside of circular obstacle regions
     def _outside_circles(self, point, centers_radii, epsilon):
