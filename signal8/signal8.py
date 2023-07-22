@@ -86,12 +86,7 @@ class Scenario(BaseScenario):
 
     # Check if point is outside of triangular obstacle regions
     def _outside_triangle(self, point, paths, epsilon):
-        enlarged_paths = []
-        for path in paths:
-            centroid = np.mean(path.vertices, axis=0)
-            enlarged_vertices = path.vertices + epsilon * (path.vertices - centroid)
-            enlarged_paths.append(mpath.Path(enlarged_vertices))
-        return not any(path.contains_points(point[None, :]) for path in enlarged_paths)
+        return not any (np.linalg.norm(point - vertex) < epsilon for path in paths for vertex in path.vertices)
     
     # Check if point is outside of circular obstacle regions
     def _outside_circles(self, point, centers_radii, epsilon):
