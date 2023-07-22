@@ -91,7 +91,7 @@ class Scenario(BaseScenario):
             centroid = np.mean(path.vertices, axis=0)
             enlarged_vertices = path.vertices + epsilon * (path.vertices - centroid)
             enlarged_paths.append(mpath.Path(enlarged_vertices))
-        return not any(path.contains_points(point) for path in enlarged_paths)
+        return not any(path.contains_points(point[None, :]) for path in enlarged_paths)
     
     # Check if point is outside of circular obstacle regions
     def _outside_circles(self, point, centers_radii, epsilon):
