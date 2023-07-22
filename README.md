@@ -4,13 +4,11 @@ Signal8 is an enhancement on top of the Simple environment, originally developed
 
 # Signal8
 
-Signal8 is an open-source research project aimed advancing the development of communication strategies in multi-agent systems. The project proposes a unique environment that emphasizes the principles of the Lewis signaling game. This distinct setting serves as a testing ground for advancing robot-to-robot communication protocols.
+Signal8 is an open-source research project aimed at advancing the development of communication strategies in multi-agent systems. The project proposes a unique environment that emphasizes the principles of the Lewis signaling game. This distinct setting serves as a testing ground for advancing robot-to-robot communication protocols.
 
 Each problem set within Signal8 introduces different constraints on entity positioning such as start points, goals, and obstacles. This dynamic aspect encourages the investigation of communication strategies in diverse settings, enhancing the environment's adaptability and realism.
 
 A notable characteristic of Signal8 is its incorporation of asymmetric information, whereby two types of agents – an 'eye in the sky' agent with global information and ground agents with only local information – operate simultaneously. This asymmetry replicates real-world situations, presenting challenges for the development of efficient communication strategies. It also provides intriguing prospects for the generation of context-dependent language and high-level directives.
-
-In Signal8, obstacles are split into two categories: large obstacles that are observable exclusively by the aerial agents, and small obstacles which are observable to ground agents only. This distinct division introduces further complexity for agents navigating the environment. Large obstacles serve as barriers that define the structure of the environment, while small obstacles, appearing unpredictably within the vicinity of the ground agents. Both large and small obstacles remain stationary throughout the instance, adding an element of constant challenge to the environment. This multi-layered design richly expands the realism and complexity of the environment, making Signal8 a more demanding and intriguing platform for testing multi-agent communication strategies.
 
 For additional information on utilizing the environment API, please refer to the [PettingZoo API documentation](https://pettingzoo.farama.org/content/basic_usage/).
 
