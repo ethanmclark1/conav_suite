@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.path as mpath
 
 from functools import partial
-from utils.scenario import BaseScenario
-from utils.simple_env import SimpleEnv, make_env
-from utils.core import Agent, Goal, Obstacle, World
-from utils.problems import get_problem_list, get_problem_instance
+from .utils.scenario import BaseScenario
+from .utils.simple_env import SimpleEnv, make_env
+from .utils.core import Agent, Goal, Obstacle, World
+from .utils.problems import get_problem_list, get_problem_instance
 
 from gymnasium.utils import EzPickle
 
@@ -89,7 +89,8 @@ class Scenario(BaseScenario):
         enlarged_paths = []
         for path in paths:
             centroid = np.mean(path.vertices, axis=0)
-            enlarged_vertices = centroid + (1 + epsilon) * (path.vertices - centroid)
+            # Make the triangle larger by moving each vertex away from the centroid by the `epsilon` distance
+            enlarged_vertices = centroid + (1 + epsilon) * (path.vertices - centroid) / np.linalg.norm(centroid - path.vertices)
             enlarged_paths.append(mpath.Path(enlarged_vertices))
         return not any(path.contains_points(point[None, :]) for path in enlarged_paths)
     
