@@ -19,7 +19,7 @@ class Entity:  # properties and state of physical world entity
         # name
         self.name = ""
         # properties:
-        self.size = 0.050
+        self.radius = 0.050
         # entity can move / be pushed
         self.movable = False
         # entity collides with others
@@ -42,12 +42,12 @@ class Goal(Entity): # properties of goal entities
 
 
 class Obstacle(Entity):  # properties of obstacles entities
-    def __init__(self, size):
+    def __init__(self, radius):
         super().__init__()
         # entity can be moved / pushed
         self.movable = False
-        # entity size
-        self.size = size
+        # entity radius
+        self.radius = radius
         
 
 class Agent(Entity):  # properties of agent entities
@@ -147,7 +147,7 @@ class World:  # multi-agent world
         delta_pos = agent_a.state.p_pos - agent_b.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         # minimum allowable distance
-        dist_min = agent_a.size + agent_b.size
+        dist_min = agent_a.radius + agent_b.radius
         # softmax penetration
         k = self.contact_margin
         penetration = np.logaddexp(0, -(dist - dist_min) / k) * k

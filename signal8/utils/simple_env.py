@@ -197,9 +197,9 @@ class SimpleEnv(AECEnv):
     
     # Check if episode is terminated or truncated
     def _episode_status(self):    
-        goal_dist_threshold = self.world.agents[0].size + self.world.agents[0].goal.size
-        small_obs_threshold = self.world.agents[0].size + self.world.small_obstacles[0].size
-        large_obs_threshold = self.world.agents[0].size + self.world.large_obstacles[0].size
+        goal_dist_threshold = self.world.agents[0].radius + self.world.agents[0].goal.radius
+        small_obs_threshold = self.world.agents[0].radius + self.world.small_obstacles[0].radius
+        large_obs_threshold = self.world.agents[0].radius + self.world.large_obstacles[0].radius
         
         small_obstacles = [obs for obs in self.world.small_obstacles]
         large_obstacles = [obs for obs in self.world.large_obstacles]    
@@ -294,10 +294,10 @@ class SimpleEnv(AECEnv):
             x += self.width // 2
             y += self.height // 2
             pygame.draw.circle(
-                self.screen, entity.color * 200, (x, y), entity.size * 350
+                self.screen, entity.color * 200, (x, y), entity.radius * 350
             )  # 350 is an arbitrary scale factor to get pygame to render similar sizes as pyglet
             pygame.draw.circle(
-                self.screen, (0, 0, 0), (x, y), entity.size * 350, 1
+                self.screen, (0, 0, 0), (x, y), entity.radius * 350, 1
             )  # borders
             assert (
                 0 < x < self.width and 0 < y < self.height
