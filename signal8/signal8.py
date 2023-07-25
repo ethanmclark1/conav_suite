@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.path as mpath
 
 from functools import partial
-from .utils.scenario import BaseScenario
-from .utils.simple_env import SimpleEnv, make_env
-from .utils.core import Agent, Goal, Obstacle, World
-from .utils.problems import get_problem_list, get_problem_instance
+from utils.scenario import BaseScenario
+from utils.simple_env import SimpleEnv, make_env
+from utils.core import Agent, Goal, Obstacle, World
+from utils.problems import get_problem_list, get_problem_instance
 
 from gymnasium.utils import EzPickle
 
@@ -83,16 +83,6 @@ class Scenario(BaseScenario):
             if condition(point):
                 break
         return point
-
-    # Check if point is outside of triangular obstacle regions
-    def _outside_triangle(self, point, paths, epsilon):
-        enlarged_paths = []
-        for path in paths:
-            centroid = np.mean(path.vertices, axis=0)
-            # Make the triangle larger by moving each vertex away from the centroid by the `epsilon` distance
-            enlarged_vertices = centroid + (1 + epsilon) * (path.vertices - centroid) / np.linalg.norm(centroid - path.vertices)
-            enlarged_paths.append(mpath.Path(enlarged_vertices))
-        return not any(path.contains_points(point[None, :]) for path in enlarged_paths)
     
     # Check if point is outside of circular obstacle regions
     def _outside_circles(self, point, centers_radii, epsilon):
@@ -107,10 +97,10 @@ class Scenario(BaseScenario):
         return not within_constraints
 
     # Reset agents and goals to their initial positions
-    def _reset_agents_and_goals(self, world, np_random, paths):
+    def _reset_agents_and_goals(self, world, np_random):
         epsilon = world.agents[0].radius
         
-        if world.problem_instance not in ['einstein_tile', 'corners', 'right_arrows', 'circle', 'solar_system']:
+        if world.problem_instance in ['bisect', 'cross', 'quarters']:
             # Used for problem instances composed of rectangles
             x_constraints = [constr[0] for constr in world.instance_constr]
             y_constraints = [constr[1] for constr in world.instance_constr]
@@ -121,13 +111,7 @@ class Scenario(BaseScenario):
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.goal.state.p_vel = np.zeros(world.dim_p)
 
-            if world.problem_instance in ['einstein_tile', 'corners', 'right_arrows']:
-                condition = partial(
-                    self._outside_triangle, 
-                    paths=paths, 
-                    epsilon=epsilon
-                    )
-            elif world.problem_instance in ['circle', 'solar_system']:
+            if world.problem_instance in ['circle', 'corners', 'scatter', 'stellaris']:
                 condition = partial(
                     self._outside_circles,
                     centers_radii=world.instance_constr,
@@ -167,7 +151,7 @@ class Scenario(BaseScenario):
                     occupied.add(shape_idx)
                     break
     
-    def _reset_small_obstacles(self, world, np_random, paths):
+    def _reset_small_obstacles(self, world, np_random):
         epsilon = world.small_obstacles[0].radius
 
         agent_positions = [agent.state.p_pos for agent in world.agents]
@@ -177,9 +161,7 @@ class Scenario(BaseScenario):
         def safe_position(point):
             outside_entity_positions = not any(np.linalg.norm(point - pos) <= epsilon for pos in agent_positions + goal_positions + large_obstacle_positions)
 
-            if world.problem_instance in ['einstein_tile', 'corners', 'right_arrows']:
-                outside_obstacle_constraints = self._outside_triangle(point, paths, epsilon)
-            elif world.problem_instance in ['circle', 'solar_system']:
+            if world.problem_instance in ['circle', 'corners', 'scatter', 'stellaris']:
                 outside_obstacle_constraints = self._outside_circles(point, world.instance_constr, epsilon) 
             else:
                 x_constraints = [constr[0] for constr in world.instance_constr]
@@ -192,12 +174,7 @@ class Scenario(BaseScenario):
             small_obstacle.state.p_vel = np.zeros(world.dim_p)
             small_obstacle.state.p_pos = self._generate_position(np_random, safe_position)
 
-    def reset_world(self, world, np_random, problem_instance):
-        def make_triangle_points(vertices, epsilon):
-            centroid = np.mean(vertices, axis=0)
-            shrunk_vertices = vertices + epsilon * (centroid - vertices)
-            return shrunk_vertices
-        
+    def reset_world(self, world, np_random, problem_instance):        
         def make_circle_points(center, radius_and_epsilon, num_points=100):
             t = np.linspace(0, 2*np.pi, num_points)
             x = center[0] + radius_and_epsilon * np.cos(t)
@@ -218,16 +195,14 @@ class Scenario(BaseScenario):
         epsilon = world.large_obstacles[0].radius
         self._set_problem_instance(world, problem_instance)
         
-        if world.problem_instance in ['einstein_tile', 'corners', 'right_arrows']:
-            paths = [mpath.Path(make_triangle_points(vertices, epsilon)) for vertices in world.instance_constr]
-        elif world.problem_instance in ['circle', 'solar_system']:
+        if world.problem_instance in ['circle', 'corners', 'scatter', 'stellaris']:
             paths = [mpath.Path(make_circle_points(center, radius - epsilon)) for center, radius in world.instance_constr]
         else:
             paths = [mpath.Path(make_rectangle_points(bounds, epsilon)) for bounds in world.instance_constr]
 
+        self._reset_agents_and_goals(world, np_random)
         self._reset_large_obstacles(world, np_random, paths)
-        self._reset_agents_and_goals(world, np_random, paths)
-        self._reset_small_obstacles(world, np_random, paths)
+        self._reset_small_obstacles(world, np_random)
     
     # Ground agents can only observe the positions of other agents, goals, and small obstacles
     def observation(self, agent, world):
