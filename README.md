@@ -36,17 +36,17 @@ env.close()
 ## List of Problem Instances
 
 | Problem Instance |                 Visualization                 |
-| :---------------: | :--------------------------------------------: |
-|    ``bisect``    | ![1688231528499](image/README/1688231528499.png) |
-|    ``circle``    | ![1688231542146](image/README/1688231542146.png) |
-|   ``corners``    | ![1686604788813](image/README/1686604788813.png) |
-|     ``cross``     | ![1686604808540](image/README/1686604808540.png) |
-| ``einstein_tile`` | ![1688231581499](image/README/1688231581499.png) |
-|   ``quarters``   | ![1688231597856](image/README/1688231597856.png) |
-| ``solar_system`` | ![1688231626872](image/README/1688231626872.png) |
-| ``right_arrows`` | ![1688231657789](image/README/1688231657789.png) |
+| :--------------: | :--------------------------------------------: |
+|    ``bisect``    | ![1691433763627](image/README/1691433763627.png) |
+|    ``circle``    | ![1691433778699](image/README/1691433778699.png) |
+|  ``corners``   | ![1691433832902](image/README/1691433832902.png) |
+|    ``cross``    | ![1691433961564](image/README/1691433961564.png) |
+|  ``staggered``  | ![1691433856331](image/README/1691433856331.png) |
+|   ``quarters``   | ![1691433864962](image/README/1691433864962.png) |
+|  ``stellaris``  | ![1691433878432](image/README/1691433878432.png) |
+|   ``scatter``   | ![1691433899914](image/README/1691433899914.png) |
 
-The red zones denote regions where large obstacles can be spawned, while the remaining space (indicated in white) designates areas eligible for agent deployment, goal placement, and generation of small obstacles.
+The red zones denote regions where large obstacles can be spawned, while the remaining space designates areas eligible for agent deployment, goal placement, and generation of small obstacles.
 
 ## Contributing
 

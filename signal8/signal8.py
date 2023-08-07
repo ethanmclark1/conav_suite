@@ -100,7 +100,7 @@ class Scenario(BaseScenario):
     def _reset_agents_and_goals(self, world, np_random):
         epsilon = world.agents[0].radius
         
-        if world.problem_instance in ['bisect', 'cross', 'quarters']:
+        if world.problem_instance in ['bisect', 'cross', 'staggered', 'quarters']:
             # Used for problem instances composed of rectangles
             x_constraints = [constr[0] for constr in world.instance_constr]
             y_constraints = [constr[1] for constr in world.instance_constr]
