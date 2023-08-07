@@ -27,7 +27,7 @@ pip install -e .
 import Signal8
 
 env = Signal8.env()
-env.reset(options={'problem_instance': 'einstein_tile'}))
+env.reset(options={'problem_instance': 'bisect'}))
 observation, _, terminations, truncations, _ = env.last()
 env.step(action)
 env.close()
