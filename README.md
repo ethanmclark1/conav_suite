@@ -1,14 +1,14 @@
 # An Extension of Multi-Agent Particle Environment
 
-Signal8 is an enhancement on top of the Simple environment, originally developed by the [Farama Foundation](https://farama.org/) as part of their [Multi-Agent Particle Environment (MPE)](https://pettingzoo.farama.org/environments/mpe/).
+signal8 is an enhancement on top of the Simple environment, originally developed by the [Farama Foundation](https://farama.org/) as part of their [Multi-Agent Particle Environment (MPE)](https://pettingzoo.farama.org/environments/mpe/).
 
-# Signal8
+# signal8
 
-Signal8 is an open-source research project aimed at advancing the development of communication strategies in multi-agent systems. The project proposes a unique environment that emphasizes the principles of the Lewis signaling game. This distinct setting serves as a testing ground for advancing robot-to-robot communication protocols.
+signal8 is an open-source research project aimed at advancing the development of communication strategies in multi-agent systems. The project proposes a unique environment that emphasizes the principles of the Lewis signaling game. This distinct setting serves as a testing ground for advancing robot-to-robot communication protocols.
 
-Each problem set within Signal8 introduces different constraints on entity positioning such as start points, goals, and obstacles. This dynamic aspect encourages the investigation of communication strategies in diverse settings, enhancing the environment's adaptability and realism.
+Each problem set within signal8 introduces different constraints on entity positioning such as start points, goals, and obstacles. This dynamic aspect encourages the investigation of communication strategies in diverse settings, enhancing the environment's adaptability and realism.
 
-A notable characteristic of Signal8 is its incorporation of asymmetric information, whereby two types of agents – an 'eye in the sky' agent with global information and ground agents with only local information – operate simultaneously. This asymmetry replicates real-world situations, presenting challenges for the development of efficient communication strategies. It also provides intriguing prospects for the generation of context-dependent language and high-level directives.
+A notable characteristic of signal8 is its incorporation of asymmetric information, whereby two types of agents – an 'eye in the sky' agent with global information and ground agents with only local information – operate simultaneously. This asymmetry replicates real-world situations, presenting challenges for the development of efficient communication strategies. It also provides intriguing prospects for the generation of context-dependent language and high-level directives.
 
 For additional information on utilizing the environment API, please refer to the [PettingZoo API documentation](https://pettingzoo.farama.org/content/basic_usage/).
 
@@ -24,9 +24,9 @@ pip install -e .
 ## Usage
 
 ```
-import Signal8
+import signal8
 
-env = Signal8.env()
+env = signal8.env()
 env.reset(options={'problem_instance': 'bisect'}))
 observation, _, terminations, truncations, _ = env.last()
 env.step(action)
@@ -50,19 +50,19 @@ The red zones denote regions where large obstacles can be spawned, while the rem
 
 ## Contributing
 
-We welcome contributions to Signal8! If you're interested in contributing, you can do so in the following ways:
+We welcome contributions to signal8! If you're interested in contributing, you can do so in the following ways:
 
-* **Bug Reports** : If you discover a bug when using Signal8, please submit a report via the issues tab. When submitting an issue, please do your best to include a detailed description of the problem and a code sample, if applicable.
-* **Feature Requests** : If you have a great idea that you think would improve Signal8, don't hesitate to post your suggestions in the issues tab. Please be as detailed as possible in your explanation.
-* **Pull Requests** : If you have made enhancements to Signal8, please feel free to submit a pull request. We appreciate all the help we can get to make Signal8 better!
+* **Bug Reports** : If you discover a bug when using signal8, please submit a report via the issues tab. When submitting an issue, please do your best to include a detailed description of the problem and a code sample, if applicable.
+* **Feature Requests** : If you have a great idea that you think would improve signal8, don't hesitate to post your suggestions in the issues tab. Please be as detailed as possible in your explanation.
+* **Pull Requests** : If you have made enhancements to signal8, please feel free to submit a pull request. We appreciate all the help we can get to make signal8 better!
 
 ## Support
 
-If you encounter any issues or have questions about Signal8, please feel free to contact us. You can either create an issue in the GitHub repository or reach out to us directly at [eclark715@gmail.com](mailto:eclark715@gmail.com).
+If you encounter any issues or have questions about signal8, please feel free to contact us. You can either create an issue in the GitHub repository or reach out to us directly at [eclark715@gmail.com](mailto:eclark715@gmail.com).
 
 ## License
 
-Signal8 is open-source software licensed under the [MIT license](https://chat.openai.com/LINK_TO_YOUR_LICENSE).
+signal8 is open-source software licensed under the [MIT license](https://chat.openai.com/LINK_TO_YOUR_LICENSE).
 
 ## Paper Citation
 
