@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.path as mpath
 
 from functools import partial
-from .utils.scenario import BaseScenario
-from .utils.simple_env import SimpleEnv, make_env
-from .utils.core import Agent, Goal, Obstacle, World
-from .utils.problems import get_problem_list, get_problem_instance
+from utils.scenario import BaseScenario
+from utils.simple_env import SimpleEnv, make_env
+from utils.core import Agent, Goal, Obstacle, World
+from utils.problems import get_problem_list, get_problem_instance
 
 from gymnasium.utils import EzPickle
 
