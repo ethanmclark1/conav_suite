@@ -1,1 +1,1 @@
-from .Signal8 import env
+from .signal8 import env
