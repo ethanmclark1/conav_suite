@@ -70,6 +70,13 @@ class Scenario(BaseScenario):
         world.buffer_dist = world.agents[0].radius + world.large_obstacles[0].radius
         return world
     
+    def add_large_obstacles(self, world, num_obstacles):
+        for i in range(num_obstacles):
+            obstacle = Obstacle(radius=0.05)
+            obstacle.name = f"obs_{i}"
+            obstacle.color = np.array([0.97, 0.801, 0.8])
+            world.large_obstacles.append(obstacle)
+    
     # Get constraints on entities given problem instance name
     def _set_problem_instance(self, world, instance_name):
         instance_constr = get_problem_instance(instance_name)
@@ -129,12 +136,14 @@ class Scenario(BaseScenario):
             agent.goal.state.p_pos = self._generate_position(np_random, condition)
     
     # Reset all large obstacles to a position that does not intersect with the agents and is within its shape
-    def _reset_large_obstacles(self, world, np_random, paths):
+    def _reset_large_obstacles(self, world, np_random, paths, add_large_obstacles=None):
         def inside_shape_condition(point):
             return any(path.contains_points(point[None, :]) for path in paths)    
         
         occupied = set()
         num_shapes = len(world.instance_constr)
+        
+        self.add_large_obstacles(world, add_large_obstacles)
         
         for i, large_obstacle in enumerate(world.large_obstacles):            
             large_obstacle.state.p_vel = np.zeros(world.dim_p)
@@ -174,7 +183,7 @@ class Scenario(BaseScenario):
             small_obstacle.state.p_vel = np.zeros(world.dim_p)
             small_obstacle.state.p_pos = self._generate_position(np_random, safe_position)
 
-    def reset_world(self, world, np_random, problem_instance):        
+    def reset_world(self, world, np_random, problem_instance, add_large_obstacles=0):        
         def make_circle_points(center, radius_and_epsilon, num_points=100):
             t = np.linspace(0, 2*np.pi, num_points)
             x = center[0] + radius_and_epsilon * np.cos(t)
@@ -201,7 +210,7 @@ class Scenario(BaseScenario):
             paths = [mpath.Path(make_rectangle_points(bounds, epsilon)) for bounds in world.instance_constr]
 
         self._reset_agents_and_goals(world, np_random)
-        self._reset_large_obstacles(world, np_random, paths)
+        self._reset_large_obstacles(world, np_random, paths, add_large_obstacles)
         self._reset_small_obstacles(world, np_random)
     
     # Ground agents can only observe the positions of other agents, goals, and small obstacles
