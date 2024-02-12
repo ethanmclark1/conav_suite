@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import matplotlib.path as mpath
 
@@ -9,6 +10,7 @@ from .utils.problems import get_problem_list, get_problem_instance
 
 from gymnasium.utils import EzPickle
 
+random.seed(42)
 
 class raw_env(SimpleEnv, EzPickle):
     def __init__(
@@ -145,7 +147,10 @@ class Scenario(BaseScenario):
         
         self.add_large_obstacles(world, add_large_obstacles)
         
-        for i, large_obstacle in enumerate(world.large_obstacles):            
+        large_obstacles = world.large_obstacles[:]
+        random.shuffle(large_obstacles)
+
+        for i, large_obstacle in enumerate(large_obstacles):            
             large_obstacle.state.p_vel = np.zeros(world.dim_p)
             
             while True:
