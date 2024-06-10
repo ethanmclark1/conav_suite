@@ -17,7 +17,9 @@ class raw_env(SimpleEnv, EzPickle):
         self, 
         num_agents=1, 
         num_large_obstacles=4, 
+        large_obstacle_radius=0.05,
         num_small_obstacles=10, 
+        small_obstacle_radius=0.02,
         render_mode=None,
         max_cycles=100,
         ):
@@ -26,7 +28,7 @@ class raw_env(SimpleEnv, EzPickle):
             raise ValueError("Signal8 has a maximum of 10 large obstacles.")
         
         scenario = Scenario()
-        world = scenario.make_world(num_agents, num_large_obstacles, num_small_obstacles)
+        world = scenario.make_world(num_agents, num_large_obstacles, large_obstacle_radius, num_small_obstacles, small_obstacle_radius)
         
         super().__init__(
             scenario=scenario, 
@@ -38,8 +40,8 @@ class raw_env(SimpleEnv, EzPickle):
 env = make_env(raw_env)
 
 class Scenario(BaseScenario):
-    def make_world(self, num_agents, num_large_obstacles, num_small_obstacles):
-        world = World()
+    def make_world(self, num_agents, num_large_obstacles, large_obstacle_radius, num_small_obstacles, small_obstacle_radius):
+        world = World(large_obstacle_radius, small_obstacle_radius)
         world.problem_list = get_problem_list()
 
         for i in range(num_agents):
@@ -57,14 +59,14 @@ class Scenario(BaseScenario):
         
         # Large obstacles can only be observed by aerial agent
         for i in range(num_large_obstacles):
-            obstacle = Obstacle(radius=0.05)
+            obstacle = Obstacle(radius=large_obstacle_radius)
             obstacle.name = f"obs_{i}"
             obstacle.color = np.array([0.97, 0.801, 0.8])
             world.large_obstacles.append(obstacle)
         
         # Small obstacles can only be observed by ground agent(s)
         for i in range(num_small_obstacles):
-            obstacle = Obstacle(radius=0.02)
+            obstacle = Obstacle(radius=small_obstacle_radius)
             obstacle.name = f"obs_{i}"
             obstacle.color = np.array([0.97, 0.801, 0.8])
             world.small_obstacles.append(obstacle)    
@@ -74,7 +76,7 @@ class Scenario(BaseScenario):
     
     def add_large_obstacles(self, world, num_obstacles):
         for i in range(num_obstacles):
-            obstacle = Obstacle(radius=0.05)
+            obstacle = Obstacle(radius=world.large_obstacle_radius)
             obstacle.name = f"obs_{i}"
             obstacle.color = np.array([0.97, 0.801, 0.8])
             world.large_obstacles.append(obstacle)
@@ -138,14 +140,14 @@ class Scenario(BaseScenario):
             agent.goal.state.p_pos = self._generate_position(np_random, condition)
     
     # Reset all large obstacles to a position that does not intersect with the agents and is within its shape
-    def _reset_large_obstacles(self, world, np_random, paths, add_large_obstacles=None):
+    def _reset_large_obstacles(self, world, np_random, paths, num_obstacles=None):
         def inside_shape_condition(point):
             return any(path.contains_points(point[None, :]) for path in paths)    
         
         occupied = set()
         num_shapes = len(world.instance_constr)
         
-        self.add_large_obstacles(world, add_large_obstacles)
+        self.add_large_obstacles(world, num_obstacles)
         
         large_obstacles = world.large_obstacles[:]
         random.shuffle(large_obstacles)

@@ -64,7 +64,7 @@ class Agent(Entity):  # properties of agent entities
         
 
 class World:  # multi-agent world
-    def __init__(self):
+    def __init__(self, large_obstacle_radius, small_obstacle_radius):
         # list of agents and entities (can change at execution-time!)
         self.agents = []
         self.goals = []
@@ -86,6 +86,8 @@ class World:  # multi-agent world
         # problem instance
         self.problem_instance = None
         self.instance_constr = None
+        self.large_obstacle_radius = large_obstacle_radius
+        self.small_obstacle_radius = small_obstacle_radius
         
     # return all entities in the world
     @property
