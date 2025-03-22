@@ -25,7 +25,7 @@ class raw_env(SimpleEnv, EzPickle):
         ):
         
         if num_large_obstacles > 10:
-            raise ValueError("Signal8 has a maximum of 10 large obstacles.")
+            raise ValueError("conav_suite has a maximum of 10 large obstacles.")
         
         scenario = Scenario()
         world = scenario.make_world(num_agents, num_large_obstacles, large_obstacle_radius, num_small_obstacles, small_obstacle_radius)
